@@ -315,6 +315,61 @@
     color: var(--color-text-muted);
   }
 
+  /* ── Sidebar layout ───────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: #0F172A;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 40;
+  }
+
+  .sidebar-brand {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .sidebar-nav {
+    padding: 12px 10px;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.25);
+    padding: 10px 12px 4px;
+  }
+
+  .sidebar-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 6px 10px;
+  }
+
+  .sidebar-footer {
+    padding: 12px 10px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .version-tag {
+    font-size: 10px;
+    color: rgba(255,255,255,0.25);
+    padding: 0 12px;
+    display: block;
+  }
+
   /* Nav items (sidebar oscuro) */
   .nav-item {
     display: flex;
@@ -340,6 +395,13 @@
     color: #93C5FD;
     font-weight: 600;
   }
+  .nav-item .nav-icon {
+    opacity: 0.6;
+    flex-shrink: 0;
+    transition: opacity 0.15s ease;
+  }
+  .nav-item:hover .nav-icon { opacity: 0.85; }
+  .nav-item.active .nav-icon { opacity: 1; }
 
   /* ── Filter bar ───────────────────────────────── */
   .filter-bar-header {

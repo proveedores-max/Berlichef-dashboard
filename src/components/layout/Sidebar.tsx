@@ -11,30 +11,47 @@ import {
   Settings,
 } from 'lucide-react'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Inicio' },
-  { to: '/estado', icon: BarChart2, label: 'Estado de Resultados' },
+const mainNav = [
+  { to: '/',         icon: LayoutDashboard, label: 'Inicio' },
+  { to: '/estado',   icon: BarChart2,       label: 'Estado de Resultados' },
   { to: '/costo-venta', icon: TrendingDown, label: 'Costo de Venta' },
-  { to: '/productos', icon: ShoppingBag, label: 'Productos' },
-  { to: '/abc', icon: BarChart3, label: 'Análisis ABC' },
-  { to: '/gastos', icon: Wallet, label: 'Gastos Operativos' },
-  { to: '/unidades', icon: Building2, label: 'Unidades de Negocio' },
-  { to: '/reportes', icon: FileText, label: 'Reportes' },
-  { to: '/configuracion', icon: Settings, label: 'Configuración' },
+  { to: '/productos',   icon: ShoppingBag,  label: 'Productos' },
+  { to: '/abc',         icon: BarChart3,    label: 'Análisis ABC' },
+  { to: '/gastos',      icon: Wallet,       label: 'Gastos Operativos' },
+  { to: '/unidades',    icon: Building2,    label: 'Unidades de Negocio' },
 ]
+
+const toolsNav = [
+  { to: '/reportes',       icon: FileText, label: 'Reportes' },
+  { to: '/configuracion',  icon: Settings, label: 'Configuración' },
+]
+
+function NavItem({ to, icon: Icon, label }: { to: string; icon: typeof FileText; label: string }) {
+  return (
+    <NavLink
+      to={to}
+      end={to === '/'}
+      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+    >
+      <Icon size={16} className="nav-icon" />
+      <span>{label}</span>
+    </NavLink>
+  )
+}
 
 export default function Sidebar() {
   return (
-    <aside
-      className="fixed top-0 left-0 h-screen flex flex-col z-40"
-      style={{ width: 'var(--sidebar-w)', background: '#0F172A' }}
-    >
+    <aside className="sidebar">
       {/* Brand */}
-      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-3">
+      <div className="sidebar-brand">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
-            className="flex items-center justify-center flex-shrink-0 rounded-xl"
-            style={{ width: 36, height: 36, background: 'var(--color-primary)' }}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--color-primary)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}
           >
             <span style={{ color: 'white', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 18 }}>B</span>
           </div>
@@ -50,25 +67,19 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto" style={{ padding: '12px 10px' }}>
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-          >
-            <Icon size={16} className="flex-shrink-0" style={{ opacity: 0.7 }} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
+      <nav className="sidebar-nav">
+        <p className="sidebar-section-label">Análisis</p>
+        {mainNav.map((item) => <NavItem key={item.to} {...item} />)}
+
+        <div className="sidebar-divider" />
+
+        <p className="sidebar-section-label">Herramientas</p>
+        {toolsNav.map((item) => <NavItem key={item.to} {...item} />)}
       </nav>
 
       {/* Footer */}
-      <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', paddingLeft: 12 }}>
-          v1.0 · Datos vía Google Sheets
-        </p>
+      <div className="sidebar-footer">
+        <span className="version-tag">v1.0 · Datos vía Google Sheets</span>
       </div>
     </aside>
   )
