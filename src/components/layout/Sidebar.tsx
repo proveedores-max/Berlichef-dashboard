@@ -26,24 +26,31 @@ const navItems = [
 export default function Sidebar() {
   return (
     <aside
-      className="fixed top-0 left-0 h-screen bg-white border-r border-surface-100 flex flex-col z-40"
-      style={{ width: 'var(--sidebar-w)' }}
+      className="fixed top-0 left-0 h-screen flex flex-col z-40"
+      style={{ width: 'var(--sidebar-w)', background: '#0F172A' }}
     >
-      {/* Logo */}
-      <div className="p-4 border-b border-surface-100">
+      {/* Brand */}
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-display font-bold text-lg">B</span>
+          <div
+            className="flex items-center justify-center flex-shrink-0 rounded-xl"
+            style={{ width: 36, height: 36, background: 'var(--color-primary)' }}
+          >
+            <span style={{ color: 'white', fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 18 }}>B</span>
           </div>
           <div>
-            <p className="font-display font-bold text-sm text-surface-900 leading-tight">Berlichef</p>
-            <p className="text-xs text-surface-400">Portal Financiero</p>
+            <p style={{ fontFamily: 'Syne, sans-serif', fontSize: 16, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+              Berlichef
+            </p>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
+              Portal Financiero
+            </p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto" style={{ padding: '12px 10px' }}>
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -51,15 +58,17 @@ export default function Sidebar() {
             end={to === '/'}
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
-            <Icon size={17} className="flex-shrink-0" />
-            <span className="text-sm">{label}</span>
+            <Icon size={16} className="flex-shrink-0" style={{ opacity: 0.7 }} />
+            <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-surface-100">
-        <p className="text-xs text-surface-300 text-center">v1.0 · Datos vía Google Sheets</p>
+      <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', paddingLeft: 12 }}>
+          v1.0 · Datos vía Google Sheets
+        </p>
       </div>
     </aside>
   )

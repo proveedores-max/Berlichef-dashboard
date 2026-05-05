@@ -92,10 +92,10 @@ export default function Dashboard() {
           {/* KPIs de estructura */}
           {kpis.ventasNetas > 0 && (
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-              <KPICard label="Food Cost %" value={kpis.foodCostPct} format="percent" compact />
-              <KPICard label="Labour Cost %" value={kpis.labourCostPct} format="percent" compact />
-              <KPICard label="Gastos Op. %" value={kpis.gastosOperativosPct} format="percent" compact />
-              <KPICard label="Mano de Obra" value={kpis.manoDeObra} compact />
+              <KPICard label="Food cost %" value={kpis.foodCostPct} format="percent" compact />
+              <KPICard label="Labour cost %" value={kpis.labourCostPct} format="percent" compact />
+              <KPICard label="Gastos op. %" value={kpis.gastosOperativosPct} format="percent" compact />
+              <KPICard label="Mano de obra" value={kpis.manoDeObra} compact />
             </div>
           )}
 

@@ -75,15 +75,15 @@ export default function CostoVenta() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        <KPICard label="Total Costo Venta" value={totalCosto} accent="brand" />
+        <KPICard label="Costo de venta" value={totalCosto} accent="brand" />
         <KPICard label="Registros" value={transactions.length} format="number" />
         <KPICard
-          label="Promedio por Registro"
+          label="Promedio por reg."
           value={transactions.length > 0 ? totalCosto / transactions.length : 0}
           compact
         />
         <KPICard
-          label="Top Categoría"
+          label="Top categoría"
           value={topCategoria?.total ?? 0}
           subtitle={topCategoria?.categoria}
           compact

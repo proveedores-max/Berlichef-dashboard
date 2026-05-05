@@ -2,102 +2,359 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────
+   DESIGN TOKENS
+───────────────────────────────────────────── */
 :root {
+  /* Sidebar */
   --sidebar-w: 240px;
+
+  /* Paleta de marca */
+  --color-primary:        #1E40AF;
+  --color-primary-light:  #3B82F6;
+  --color-primary-surface:#EFF6FF;
+
+  /* Semántica financiera */
+  --color-success:        #059669;
+  --color-success-light:  #D1FAE5;
+  --color-danger:         #DC2626;
+  --color-danger-light:   #FEE2E2;
+  --color-warning:        #D97706;
+  --color-warning-light:  #FEF3C7;
+
+  /* Neutros */
+  --color-surface:        #FFFFFF;
+  --color-surface-alt:    #F8FAFC;
+  --color-border:         #E2E8F0;
+  --color-text-primary:   #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94A3B8;
+
+  /* Gauge colors */
+  --gauge-danger:   #EF4444;
+  --gauge-warning:  #F59E0B;
+  --gauge-good:     #10B981;
+  --gauge-track:    #E2E8F0;
+
+  /* Sombras */
+  --shadow-card:       0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-card-hover: 0 4px 12px rgba(0,0,0,0.08);
+
+  /* Radios */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
 }
 
+/* ─────────────────────────────────────────────
+   TIPOGRAFÍA
+───────────────────────────────────────────── */
+
+/* Números KPI grandes */
+.text-kpi {
+  font-family: 'Syne', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+/* Títulos de sección */
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Labels de KPI / encabezados */
+.label-kpi {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+/* Subtítulos de página */
+.text-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* Valores numéricos en tablas */
+.text-numeric {
+  font-family: 'DM Sans', sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────── */
 @layer base {
   body {
-    @apply font-sans text-surface-800 bg-surface-50 antialiased;
+    @apply font-sans antialiased;
+    color: var(--color-text-primary);
+    background: var(--color-surface-alt);
   }
 }
 
+/* ─────────────────────────────────────────────
+   COMPONENTES
+───────────────────────────────────────────── */
 @layer components {
+
+  /* Cards */
   .card {
-    @apply bg-white rounded-2xl border border-surface-100 shadow-sm;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transition: box-shadow 0.2s ease;
   }
 
+  /* KPI Card */
   .kpi-card {
-    @apply card p-5 flex flex-col gap-1;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
+  .kpi-card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  .kpi-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .kpi-delta {
+    font-size: 12px;
+    font-weight: 500;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .kpi-delta.positive { color: var(--color-success); }
+  .kpi-delta.negative { color: var(--color-danger); }
 
+  /* Badges */
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium;
   }
-
   .badge-positive {
-    @apply badge bg-green-50 text-positive;
+    @apply badge;
+    background: var(--color-success-light);
+    color: var(--color-success);
   }
-
   .badge-negative {
-    @apply badge bg-red-50 text-negative;
+    @apply badge;
+    background: var(--color-danger-light);
+    color: var(--color-danger);
   }
-
   .badge-neutral {
     @apply badge bg-surface-100 text-surface-600;
   }
 
+  /* Botones */
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 text-white text-sm font-medium hover:bg-brand-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--color-primary);
   }
+  .btn-primary:hover { background: #1E3A8A; }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-surface-200 text-surface-700 text-sm font-medium hover:bg-surface-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    border-radius: var(--radius-sm);
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-primary-light);
+    color: var(--color-primary);
   }
 
+  /* Botón Excel */
+  .btn-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn-excel:hover { background: #1E3A8A; }
+  .btn-excel:active { transform: scale(0.98); }
+  .btn-excel:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* Botón refresh */
+  .btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-refresh:hover {
+    border-color: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  /* Tablas */
   .table-base {
     @apply w-full text-sm;
   }
-
   .table-base thead tr {
-    @apply border-b border-surface-100;
+    border-bottom: 1px solid var(--color-border);
   }
-
   .table-base thead th {
-    @apply px-3 py-3 text-left text-xs font-semibold text-surface-500 uppercase tracking-wide;
+    @apply px-3 py-3 text-left;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
   }
-
   .table-base tbody tr {
-    @apply border-b border-surface-50 hover:bg-surface-50 transition-colors;
+    border-bottom: 1px solid var(--color-surface-alt);
+    transition: background 0.15s ease;
   }
-
+  .table-base tbody tr:hover {
+    background: var(--color-surface-alt);
+  }
   .table-base tbody td {
-    @apply px-3 py-3 text-surface-700;
+    @apply px-3 py-3;
+    color: var(--color-text-secondary);
   }
 
+  /* Inputs */
   .filter-select {
-    @apply w-full rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm text-surface-700 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent;
+    @apply w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent;
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+  }
+  .filter-select:focus {
+    --tw-ring-color: var(--color-primary-light);
   }
 
   .input-base {
-    @apply w-full rounded-lg border border-surface-200 bg-white px-3 py-2 text-sm text-surface-700 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent;
+    @apply w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:border-transparent;
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+  }
+  .input-base::placeholder {
+    color: var(--color-text-muted);
   }
 
+  /* Report cards */
+  .report-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .report-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    border-color: var(--color-primary-light);
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .page-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .update-timestamp {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  /* Nav items (sidebar oscuro) */
   .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-surface-500 hover:text-surface-800 hover:bg-surface-50 transition-colors cursor-pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    color: rgba(255,255,255,0.55);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 400;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    margin-bottom: 2px;
   }
-
+  .nav-item:hover {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.85);
+  }
   .nav-item.active {
-    @apply text-brand-600 bg-brand-50 font-semibold;
+    background: rgba(59,130,246,0.2);
+    color: #93C5FD;
+    font-weight: 600;
   }
 
-  .section-title {
-    @apply font-display text-xl font-bold text-surface-900;
-  }
+  /* Utilidades de color semántico */
+  .text-positive { color: var(--color-success); }
+  .text-negative { color: var(--color-danger); }
+  .text-warning  { color: var(--color-warning); }
 
   .mono {
     @apply font-mono;
-  }
-
-  .text-positive {
-    @apply text-[#0ab86e];
-  }
-
-  .text-negative {
-    @apply text-[#e63946];
+    font-variant-numeric: tabular-nums;
   }
 }
 
+/* ─────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────── */
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 0.25s ease-in-out;
@@ -105,6 +362,6 @@
 
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 }
