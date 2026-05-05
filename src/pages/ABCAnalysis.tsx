@@ -11,27 +11,24 @@ const classConfig = {
   A: {
     label: 'Clase A',
     desc: 'Alto impacto · Control prioritario',
-    border: 'border-red-200',
-    bg: 'bg-red-50',
-    text: 'text-negative',
+    accentColor: 'var(--color-danger)',
+    textColor:   'var(--color-danger)',
     bar: 'bg-negative',
     badge: 'bg-red-100 text-negative',
   },
   B: {
     label: 'Clase B',
     desc: 'Impacto medio · Monitoreo regular',
-    border: 'border-amber-200',
-    bg: 'bg-amber-50',
-    text: 'text-warning',
+    accentColor: 'var(--color-warning)',
+    textColor:   'var(--color-warning)',
     bar: 'bg-warning',
     badge: 'bg-amber-100 text-amber-700',
   },
   C: {
     label: 'Clase C',
     desc: 'Bajo impacto · Revisión periódica',
-    border: 'border-surface-200',
-    bg: 'bg-surface-50',
-    text: 'text-surface-600',
+    accentColor: 'var(--color-success)',
+    textColor:   'var(--color-success)',
     bar: 'bg-surface-300',
     badge: 'bg-surface-100 text-surface-600',
   },
@@ -62,13 +59,23 @@ export default function ABCAnalysis() {
           const total = items.reduce((a, i) => a + i.total, 0)
           const cfg = classConfig[cls]
           return (
-            <div key={cls} className={`card p-5 border-2 ${cfg.border} ${cfg.bg}`}>
-              <p className={`text-xs font-bold uppercase tracking-wider ${cfg.text}`}>{cfg.label}</p>
-              <p className="text-2xl font-display font-bold mono text-surface-900 mt-1">{fmtMXN(total)}</p>
-              <p className="text-sm text-surface-500 mt-0.5">
+            <div
+              key={cls}
+              className="kpi-card"
+              style={{ borderLeft: `4px solid ${cfg.accentColor}` }}
+            >
+              <div className="kpi-card-header">
+                <span className="label-kpi" style={{ color: cfg.textColor }}>{cfg.label}</span>
+              </div>
+              <p className="text-kpi" style={{ color: cfg.textColor, fontSize: '1.5rem' }}>
+                {fmtMXN(total)}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
                 {items.length} productos · {fmtPct(grand > 0 ? (total / grand) * 100 : 0)} del total
               </p>
-              <p className={`text-xs mt-2 font-medium ${cfg.text}`}>{cfg.desc}</p>
+              <p style={{ fontSize: 11, fontWeight: 500, marginTop: 6, color: cfg.textColor }}>
+                {cfg.desc}
+              </p>
             </div>
           )
         })}
@@ -86,7 +93,7 @@ export default function ABCAnalysis() {
           <button
             onClick={() => exportABC(abcItems)}
             disabled={abcItems.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Excel

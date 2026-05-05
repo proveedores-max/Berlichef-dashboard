@@ -106,7 +106,7 @@ export default function EstadoResultados() {
           <button
             onClick={() => exportUDNSummary(udnSummaries)}
             disabled={udnSummaries.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Excel

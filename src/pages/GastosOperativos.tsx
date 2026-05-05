@@ -75,7 +75,7 @@ export default function GastosOperativos() {
           <button
             onClick={() => exportFinancials(financials)}
             disabled={financials.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Excel

@@ -31,13 +31,15 @@ interface ReportCardProps {
 
 function ReportCard({ icon, title, description, count, onExport, disabled }: ReportCardProps) {
   return (
-    <div className="card p-5 flex items-start gap-4">
-      <span className="text-3xl">{icon}</span>
-      <div className="flex-1">
-        <p className="font-semibold text-surface-800 mb-0.5">{title}</p>
-        <p className="text-sm text-surface-400">{description} · {fmtNum(count)} registros</p>
+    <div className="report-card">
+      <div className="report-card-info" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span style={{ fontSize: 28, lineHeight: 1 }}>{icon}</span>
+        <div>
+          <h3>{title}</h3>
+          <p>{description} · {fmtNum(count)} registros</p>
+        </div>
       </div>
-      <button onClick={onExport} disabled={disabled} className="btn-primary text-xs flex-shrink-0">
+      <button onClick={onExport} disabled={disabled} className="btn-excel" style={{ flexShrink: 0 }}>
         <Download size={13} />
         Excel
       </button>
@@ -123,7 +125,7 @@ export default function Reportes() {
           <li>• Aplica los filtros deseados en el panel superior (mes, UDN, categoría, etc.)</li>
           <li>• Los reportes exportan únicamente los datos que coinciden con los filtros activos</li>
           <li>• Para exportar todos los datos, haz clic en <strong>Limpiar</strong> en el panel de filtros</li>
-          <li>• Usa Ctrl/Cmd para seleccionar múltiples valores en los filtros de lista</li>
+          <li>• Usa los checkboxes en el panel de filtros para seleccionar múltiples valores</li>
         </ul>
       </div>
     </div>

@@ -103,7 +103,7 @@ export default function UnidadesNegocio() {
           <button
             onClick={() => exportUDNSummary(summaries)}
             disabled={summaries.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Excel

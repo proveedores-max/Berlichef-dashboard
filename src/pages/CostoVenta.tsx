@@ -128,7 +128,7 @@ export default function CostoVenta() {
           <button
             onClick={() => exportCategories(categoryCosts)}
             disabled={categoryCosts.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Excel
@@ -174,7 +174,7 @@ export default function CostoVenta() {
           <button
             onClick={() => exportTransactions(transactions)}
             disabled={transactions.length === 0}
-            className="btn-secondary text-xs"
+            className="btn-excel"
           >
             <Download size={13} />
             Exportar todo
