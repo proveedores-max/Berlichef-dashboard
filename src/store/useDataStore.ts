@@ -115,6 +115,7 @@ export function useFilteredEstadoCuenta(): EstadoCuenta[] {
   const { data, filters } = useDataStore()
   if (!data || !data.estadoCuenta) return []
   return data.estadoCuenta.filter((e) => {
+    if (e.udn === 'General') return false  // fila consolidada, no es UDN real
     if (filters.mes.length > 0 && !filters.mes.includes(e.mes)) return false
     if (filters.udn.length > 0 && !filters.udn.includes(e.udn)) return false
     return true
@@ -127,23 +128,27 @@ export function computeKPIs(
   sales: Sale[],
   estadoCuenta?: EstadoCuenta[]
 ): KPIs {
-  const costoVenta = transactions.reduce((a, t) => a + t.total, 0)
-
+  let costoVenta   = transactions.reduce((a, t) => a + t.total, 0)
   let ventasNetas: number
   let manoDeObra: number
   let gastosOperativos: number
+  let utilidadBruta: number
+  let ebitda: number
 
   if (estadoCuenta && estadoCuenta.length > 0) {
     ventasNetas      = estadoCuenta.reduce((a, e) => a + e.ventasNetas,      0)
+    costoVenta       = estadoCuenta.reduce((a, e) => a + e.costoVenta,       0)
+    utilidadBruta    = estadoCuenta.reduce((a, e) => a + e.utilidadBruta,    0)
     manoDeObra       = estadoCuenta.reduce((a, e) => a + e.manoDeObra,       0)
     gastosOperativos = estadoCuenta.reduce((a, e) => a + e.gastosOperativos, 0)
+    ebitda           = estadoCuenta.reduce((a, e) => a + e.ebitda,           0)
   } else {
     ventasNetas      = sales.reduce((a, s) => a + s.ventasNetas, 0)
     manoDeObra       = financials.filter((f) => f.clasificacion === 'Nomina').reduce((a, f) => a + f.total, 0)
     gastosOperativos = financials.filter((f) => f.clasificacion === 'Gasto operativo').reduce((a, f) => a + f.total, 0)
+    utilidadBruta    = ventasNetas - costoVenta
+    ebitda           = utilidadBruta - manoDeObra - gastosOperativos
   }
-  const utilidadBruta = ventasNetas - costoVenta
-  const ebitda = utilidadBruta - manoDeObra - gastosOperativos
 
   const safe = (n: number) => (ventasNetas === 0 ? 0 : (n / ventasNetas) * 100)
 

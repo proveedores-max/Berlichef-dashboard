@@ -45,9 +45,15 @@ interface EstadoCuenta {
   udn:              string
   ventasNetas:      number
   costoVenta:       number
+  utilidadBruta:    number
+  utilidadBrutaPct: number
   manoDeObra:       number
   gastosOperativos: number
   ebitda:           number
+  ebitdaPct:        number
+  materiaPrimaPct:  number
+  manoDeObraPct:    number
+  gastosOpPct:      number
 }
 
 function parseMoney(val: string | undefined): number {
@@ -111,25 +117,31 @@ function parseProducts(rows: string[][]): Product[] {
   }))
 }
 
+function toPercent(val: string | undefined): number {
+  if (!val) return 0
+  const n = parseFloat(String(val).replace(/[%,\s]/g, '')) || 0
+  // Decimals like 0.709 → 70.9%; already-percent like 70.9 stays
+  return Math.abs(n) <= 1 ? n * 100 : n
+}
+
 function parseEstadoCuenta(rows: string[][]): EstadoCuenta[] {
   if (rows.length < 2) return []
-  const header = rows[0].map((h) => h?.trim().toLowerCase() ?? '')
-  const idx = (names: string[]) => names.reduce((found, n) => found !== -1 ? found : header.indexOf(n), -1)
-  const iMes   = idx(['mes'])
-  const iUdn   = idx(['udn', 'unidad'])
-  const iVentas = idx(['ventas netas', 'ventas', 'ventasnetas'])
-  const iCdv   = idx(['costo de venta', 'costo venta', 'costoventa'])
-  const iMdo   = idx(['mano de obra', 'nómina', 'nomina', 'mano obra'])
-  const iGastos = idx(['gastos operativos', 'gastos op', 'gastos'])
-  const iEbitda = idx(['ebitda'])
+  // Fixed column layout: A=Mes B=Unidad C=VentasNetas D=CostoVenta E=UtilidadBruta
+  // F=UtilidadBruta% G=ManoDeObra H=GastosOp I=EBITDA J=EBITDA% K=MateriaPrima% L=ManoObra% M=GastosOp%
   return rows.slice(1).filter((r) => r.length > 0 && r[0]).map((r) => ({
-    mes:              iMes    !== -1 ? (r[iMes]   ?? '') : '',
-    udn:              iUdn    !== -1 ? (r[iUdn]   ?? '') : '',
-    ventasNetas:      iVentas !== -1 ? parseMoney(r[iVentas])  : 0,
-    costoVenta:       iCdv    !== -1 ? parseMoney(r[iCdv])     : 0,
-    manoDeObra:       iMdo    !== -1 ? parseMoney(r[iMdo])     : 0,
-    gastosOperativos: iGastos !== -1 ? parseMoney(r[iGastos])  : 0,
-    ebitda:           iEbitda !== -1 ? parseMoney(r[iEbitda])  : 0,
+    mes:              r[0] ?? '',
+    udn:              r[1] ?? '',
+    ventasNetas:      parseMoney(r[2]),
+    costoVenta:       parseMoney(r[3]),
+    utilidadBruta:    parseMoney(r[4]),
+    utilidadBrutaPct: toPercent(r[5]),
+    manoDeObra:       parseMoney(r[6]),
+    gastosOperativos: parseMoney(r[7]),
+    ebitda:           parseMoney(r[8]),
+    ebitdaPct:        toPercent(r[9]),
+    materiaPrimaPct:  toPercent(r[10]),
+    manoDeObraPct:    toPercent(r[11]),
+    gastosOpPct:      toPercent(r[12]),
   }))
 }
 
@@ -150,7 +162,7 @@ export const handler: Handler = async () => {
       fetchSheet('Gastos Operativos!A:G'),
       fetchSheet('Ventas!A:D'),
       fetchSheet('BDD Precios!A:C'),
-      fetchSheet('Estado de Cuenta!A:Z').catch(() => [] as string[][]),
+      fetchSheet('Estado de Cuenta!A:M').catch(() => [] as string[][]),
     ])
 
     return {

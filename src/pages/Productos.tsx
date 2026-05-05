@@ -213,9 +213,9 @@ export default function Productos() {
             <table className="table-base">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Producto</th>
-                  <th className="text-right">Costo Total</th>
+                  <th className="col-center">#</th>
+                  <th className="col-left">Producto</th>
+                  <th className="col-right">Costo Total</th>
                   <th></th>
                 </tr>
               </thead>

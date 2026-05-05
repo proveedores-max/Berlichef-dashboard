@@ -83,11 +83,17 @@ export type FilterState = {
 export interface EstadoCuenta {
   mes:              string
   udn:              string
-  ventasNetas:      number
-  costoVenta:       number
-  manoDeObra:       number
-  gastosOperativos: number
-  ebitda:           number
+  ventasNetas:      number  // col C
+  costoVenta:       number  // col D
+  utilidadBruta:    number  // col E
+  utilidadBrutaPct: number  // col F  (decimal → %)
+  manoDeObra:       number  // col G
+  gastosOperativos: number  // col H
+  ebitda:           number  // col I
+  ebitdaPct:        number  // col J  (decimal → %)
+  materiaPrimaPct:  number  // col K  (decimal → %)
+  manoDeObraPct:    number  // col L  (decimal → %)
+  gastosOpPct:      number  // col M  (decimal → %)
 }
 
 export type SheetData = {

@@ -18,11 +18,9 @@ async function saveWorkbook(wb: ExcelJS.Workbook, filename: string) {
   saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), filename)
 }
 
-// ── 1. Costo de Venta ────────────────────────────────────────────────────────
+// ── Worksheet builders (reusable for single and multi-export) ────────────────
 
-export async function exportTransactions(rows: Transaction[], filters = '', filename?: string) {
-  const wb = new ExcelJS.Workbook()
-  setWorkbookProps(wb)
+function buildTransactionsWS(wb: ExcelJS.Workbook, rows: Transaction[], filters = '') {
   const ws = wb.addWorksheet('Costo de Venta')
   setSheetProps(ws)
 
@@ -48,13 +46,8 @@ export async function exportTransactions(rows: Transaction[], filters = '', file
     addDataRow(ws, [r.fecha, r.mes, r.semana, r.udn, r.producto, r.categoria, r.area, r.cantidad, r.costoUnitario, r.total, r.notas ?? ''], cols, i)
     grandTotal += r.total
   })
-
   addDataRow(ws, ['', '', '', '', '', '', '', '', 'TOTAL', grandTotal, ''], cols, rows.length, true)
-
-  await saveWorkbook(wb, filename ?? `berlichef_costo_venta_${todayStr()}.xlsx`)
 }
-
-// ── 2. Análisis ABC ──────────────────────────────────────────────────────────
 
 const ABC_COLORS: Record<'A' | 'B' | 'C', { bg: string; font: string }> = {
   A: { bg: 'FFFEE2E2', font: 'FFDC2626' },
@@ -62,9 +55,7 @@ const ABC_COLORS: Record<'A' | 'B' | 'C', { bg: string; font: string }> = {
   C: { bg: 'FFF0FDF4', font: 'FF059669' },
 }
 
-export async function exportABC(rows: ABCItem[], filters = '', filename?: string) {
-  const wb = new ExcelJS.Workbook()
-  setWorkbookProps(wb)
+function buildAbcWS(wb: ExcelJS.Workbook, rows: ABCItem[], filters = '') {
   const ws = wb.addWorksheet('Análisis ABC')
   setSheetProps(ws)
 
@@ -81,7 +72,6 @@ export async function exportABC(rows: ABCItem[], filters = '', filename?: string
   buildExcelHeader(ws, 'Análisis ABC — Pareto de Costos', filters, cols.length)
   applyColumnConfig(ws, cols)
 
-  // Summary block before table rows
   addSectionHeader(ws, 'Resumen por clase', cols.length)
   const byClass = { A: { count: 0, total: 0 }, B: { count: 0, total: 0 }, C: { count: 0, total: 0 } }
   rows.forEach((r) => { byClass[r.clase].count++; byClass[r.clase].total += r.total })
@@ -95,7 +85,6 @@ export async function exportABC(rows: ABCItem[], filters = '', filename?: string
   })
 
   addSectionHeader(ws, 'Detalle por producto', cols.length)
-
   rows.forEach((r, i) => {
     const row = addDataRow(ws, [i + 1, r.producto, r.categoria, r.total, r.pct, r.pctAcum, r.clase], cols, i)
     const clsCell = row.getCell(7)
@@ -103,17 +92,10 @@ export async function exportABC(rows: ABCItem[], filters = '', filename?: string
     clsCell.font  = { ...clsCell.font, bold: true, color: { argb: ABC_COLORS[r.clase].font } }
     clsCell.border = { top: { style: 'thin', color: { argb: ABC_COLORS[r.clase].font } }, bottom: { style: 'thin', color: { argb: ABC_COLORS[r.clase].font } }, left: { style: 'thin', color: { argb: ABC_COLORS[r.clase].font } }, right: { style: 'thin', color: { argb: ABC_COLORS[r.clase].font } } }
   })
-
   addDataRow(ws, ['', 'TOTAL', '', grandTotalABC, 100, '', ''], cols, rows.length, true)
-
-  await saveWorkbook(wb, filename ?? `berlichef_abc_${todayStr()}.xlsx`)
 }
 
-// ── 3. Por Categoría ─────────────────────────────────────────────────────────
-
-export async function exportCategories(rows: CategoryCost[], filters = '', filename?: string) {
-  const wb = new ExcelJS.Workbook()
-  setWorkbookProps(wb)
+function buildCategoriesWS(wb: ExcelJS.Workbook, rows: CategoryCost[], filters = '') {
   const ws = wb.addWorksheet('Por Categoría')
   setSheetProps(ws)
 
@@ -128,10 +110,8 @@ export async function exportCategories(rows: CategoryCost[], filters = '', filen
   applyColumnConfig(ws, cols)
 
   const maxPct = Math.max(...rows.map((r) => r.pct), 1)
-
   rows.forEach((r, i) => {
     const row = addDataRow(ws, [i + 1, r.categoria, r.total, r.pct], cols, i)
-    // Visual data-bar effect: gradient fill on the % cell proportional to value
     const barCell = row.getCell(4)
     const intensity = Math.round((r.pct / maxPct) * 180)
     const hex = intensity.toString(16).padStart(2, '0').toUpperCase()
@@ -141,11 +121,7 @@ export async function exportCategories(rows: CategoryCost[], filters = '', filen
 
   const grandTotal = rows.reduce((s, r) => s + r.total, 0)
   addDataRow(ws, ['', 'TOTAL', grandTotal, 100], cols, rows.length, true)
-
-  await saveWorkbook(wb, filename ?? `berlichef_categorias_${todayStr()}.xlsx`)
 }
-
-// ── 4. Por UDN ───────────────────────────────────────────────────────────────
 
 function colorCell(cell: ExcelJS.Cell, value: number, lowGood: boolean, thresholds: [number, number]) {
   const [warn, bad] = thresholds
@@ -158,9 +134,7 @@ function colorCell(cell: ExcelJS.Cell, value: number, lowGood: boolean, threshol
   cell.font = { ...cell.font, bold: true, color: { argb: bg } }
 }
 
-export async function exportUDNSummary(rows: UDNSummary[], filters = '', filename?: string) {
-  const wb = new ExcelJS.Workbook()
-  setWorkbookProps(wb)
+function buildUDNWS(wb: ExcelJS.Workbook, rows: UDNSummary[], filters = '') {
   const ws = wb.addWorksheet('Por UDN')
   setSheetProps(ws)
 
@@ -187,40 +161,27 @@ export async function exportUDNSummary(rows: UDNSummary[], filters = '', filenam
       r.utilidadBrutaPct, r.foodCostPct, r.labourCostPct,
       r.gastosOperativos, r.gastosOperativosPct, r.ebitda, r.ebitdaPct,
     ], cols, i)
-
-    // Food Cost %: good < 28, warn < 35, bad >= 35
     colorCell(row.getCell(6),  r.foodCostPct,        true,  [28, 35])
-    // Labour %: good < 32, warn < 40
     colorCell(row.getCell(7),  r.labourCostPct,      true,  [32, 40])
-    // Gastos Op. %: good < 15, warn < 20
     colorCell(row.getCell(9),  r.gastosOperativosPct,true,  [15, 20])
-    // EBITDA %: good >= 18, warn >= 10
     colorCell(row.getCell(11), r.ebitdaPct,          false, [18, 10])
   })
 
-  // Totals / averages row
-  const totalVentas    = rows.reduce((s, r) => s + r.ventasNetas, 0)
-  const totalCosto     = rows.reduce((s, r) => s + r.costoVenta, 0)
-  const totalUB        = rows.reduce((s, r) => s + r.utilidadBruta, 0)
-  const totalEBITDA    = rows.reduce((s, r) => s + r.ebitda, 0)
-  const avgFoodCost    = totalVentas > 0 ? (totalCosto / totalVentas) * 100 : 0
-  const avgEBITDAPct   = totalVentas > 0 ? (totalEBITDA / totalVentas) * 100 : 0
-  const avgUBPct       = totalVentas > 0 ? (totalUB / totalVentas) * 100 : 0
+  const totalVentas  = rows.reduce((s, r) => s + r.ventasNetas, 0)
+  const totalCosto   = rows.reduce((s, r) => s + r.costoVenta, 0)
+  const totalUB      = rows.reduce((s, r) => s + r.utilidadBruta, 0)
+  const totalEBITDA  = rows.reduce((s, r) => s + r.ebitda, 0)
+  const avgFoodCost  = totalVentas > 0 ? (totalCosto / totalVentas) * 100 : 0
+  const avgEBITDAPct = totalVentas > 0 ? (totalEBITDA / totalVentas) * 100 : 0
+  const avgUBPct     = totalVentas > 0 ? (totalUB / totalVentas) * 100 : 0
 
   addDataRow(ws, [
     'CONSOLIDADO', totalVentas, totalCosto, totalUB,
-    avgUBPct, avgFoodCost, 0,
-    0, 0, totalEBITDA, avgEBITDAPct,
+    avgUBPct, avgFoodCost, 0, 0, 0, totalEBITDA, avgEBITDAPct,
   ], cols, rows.length, true)
-
-  await saveWorkbook(wb, filename ?? `berlichef_udns_${todayStr()}.xlsx`)
 }
 
-// ── 5. Gastos Operativos ─────────────────────────────────────────────────────
-
-export async function exportFinancials(rows: Financial[], filters = '', filename?: string) {
-  const wb = new ExcelJS.Workbook()
-  setWorkbookProps(wb)
+function buildFinancialsWS(wb: ExcelJS.Workbook, rows: Financial[], filters = '') {
   const ws = wb.addWorksheet('Gastos Operativos')
   setSheetProps(ws)
 
@@ -237,7 +198,6 @@ export async function exportFinancials(rows: Financial[], filters = '', filename
   buildExcelHeader(ws, 'Gastos Operativos', filters, cols.length)
   applyColumnConfig(ws, cols)
 
-  // Group by clasificacion → categoria
   const groups = new Map<string, Financial[]>()
   rows.forEach((r) => {
     const key = `${r.clasificacion}||${r.categoria}`
@@ -251,29 +211,101 @@ export async function exportFinancials(rows: Financial[], filters = '', filename
 
   for (const [key, items] of groups) {
     const [clasif, cat] = key.split('||')
-
     if (clasif !== currentClasif) {
       addSectionHeader(ws, `▸ ${clasif}`, cols.length)
       currentClasif = clasif
     }
-
     addSectionHeader(ws, `  ${cat}`, cols.length)
-
     let subtotal = 0
     items.forEach((r) => {
       addDataRow(ws, [r.mes, r.udn, r.clasificacion, r.categoria, r.descripcion, r.total, r.notas ?? ''], cols, rowIdx++)
       subtotal  += r.total
       grandTotal += r.total
     })
-
-    // Subtotal row for this category
     const subRow = addDataRow(ws, ['', '', '', `Subtotal ${cat}`, '', subtotal, ''], cols, rowIdx++, false)
     const subCell = subRow.getCell(6)
-    subCell.font = { name: 'Calibri', bold: true, size: 10, color: { argb: EXCEL_COLORS.subheaderText } }
+    subCell.font   = { name: 'Calibri', bold: true, size: 10, color: { argb: EXCEL_COLORS.subheaderText } }
     subCell.numFmt = numFmt.currency
   }
-
   addDataRow(ws, ['', '', '', '', 'TOTAL', grandTotal, ''], cols, rowIdx, true)
+}
 
+// ── Public single-export functions ───────────────────────────────────────────
+
+export async function exportTransactions(rows: Transaction[], filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildTransactionsWS(wb, rows, filters)
+  await saveWorkbook(wb, filename ?? `berlichef_costo_venta_${todayStr()}.xlsx`)
+}
+
+export async function exportABC(rows: ABCItem[], filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildAbcWS(wb, rows, filters)
+  await saveWorkbook(wb, filename ?? `berlichef_abc_${todayStr()}.xlsx`)
+}
+
+export async function exportCategories(rows: CategoryCost[], filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildCategoriesWS(wb, rows, filters)
+  await saveWorkbook(wb, filename ?? `berlichef_categorias_${todayStr()}.xlsx`)
+}
+
+export async function exportUDNSummary(rows: UDNSummary[], filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildUDNWS(wb, rows, filters)
+  await saveWorkbook(wb, filename ?? `berlichef_udns_${todayStr()}.xlsx`)
+}
+
+export async function exportFinancials(rows: Financial[], filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildFinancialsWS(wb, rows, filters)
   await saveWorkbook(wb, filename ?? `berlichef_gastos_${todayStr()}.xlsx`)
 }
+
+// ── Multi-export ─────────────────────────────────────────────────────────────
+
+export interface MultiExportData {
+  transactions:  Transaction[]
+  abcItems:      ABCItem[]
+  categories:    CategoryCost[]
+  udnSummaries:  UDNSummary[]
+  financials:    Financial[]
+}
+
+const SHEET_ORDER = [
+  'costoVentaDetallado',
+  'analisisAbc',
+  'costoPorCategoria',
+  'comparativoUDN',
+  'gastosOperativos',
+] as const
+
+type ReportKey = typeof SHEET_ORDER[number]
+
+export async function downloadMultipleReports(
+  selected: Set<string>,
+  data: MultiExportData,
+  filters = '',
+) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+
+  const ordered = SHEET_ORDER.filter((k) => selected.has(k))
+  for (const key of ordered) {
+    if (key === 'costoVentaDetallado') buildTransactionsWS(wb, data.transactions, filters)
+    if (key === 'analisisAbc')         buildAbcWS(wb, data.abcItems, filters)
+    if (key === 'costoPorCategoria')   buildCategoriesWS(wb, data.categories, filters)
+    if (key === 'comparativoUDN')      buildUDNWS(wb, data.udnSummaries, filters)
+    if (key === 'gastosOperativos')    buildFinancialsWS(wb, data.financials, filters)
+  }
+
+  const dateStr = new Date().toLocaleDateString('es-MX').replace(/\//g, '-')
+  await saveWorkbook(wb, `Berlichef_Reportes_${dateStr}.xlsx`)
+}
+
+export type { ReportKey }

@@ -103,13 +103,13 @@ export default function ABCAnalysis() {
           <table className="table-base">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th className="text-right">Costo Total</th>
-                <th className="text-right">% Individual</th>
-                <th className="text-right">% Acumulado</th>
-                <th>Clase</th>
+                <th className="col-center">#</th>
+                <th className="col-left">Producto</th>
+                <th className="col-left">Categoría</th>
+                <th className="col-right">Costo Total</th>
+                <th className="col-right">% del Total</th>
+                <th className="col-right">% Acumulado</th>
+                <th className="col-center">Clase</th>
               </tr>
             </thead>
             <tbody>

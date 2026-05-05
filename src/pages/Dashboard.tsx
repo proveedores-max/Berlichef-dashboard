@@ -165,13 +165,13 @@ export default function Dashboard() {
                 <table className="table-base">
                   <thead>
                     <tr>
-                      <th>Unidad</th>
-                      <th className="text-right">Ventas netas</th>
-                      <th className="text-right">Costo venta</th>
-                      <th className="text-right">Utilidad bruta</th>
-                      <th className="text-right">Food cost</th>
-                      <th className="text-right">EBITDA</th>
-                      <th className="text-right">EBITDA %</th>
+                      <th className="col-left">Unidad</th>
+                      <th className="col-right">Ventas netas</th>
+                      <th className="col-right">Costo venta</th>
+                      <th className="col-right">Utilidad bruta</th>
+                      <th className="col-center">Food cost</th>
+                      <th className="col-right">EBITDA</th>
+                      <th className="col-right">EBITDA %</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -183,7 +183,7 @@ export default function Dashboard() {
                         <td className={`mono font-medium text-right ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}>
                           {fmtMXN(u.utilidadBruta)}
                         </td>
-                        <td className="text-right">
+                        <td className="col-center">
                           <span className={`badge ${u.foodCostPct > 35 ? 'badge-negative' : 'badge-positive'}`}>
                             {fmtPct(u.foodCostPct)}
                           </span>
