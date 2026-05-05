@@ -164,34 +164,34 @@ export default function Productos() {
               <table className="table-base">
                 <thead>
                   <tr>
-                    <th>Fecha</th>
-                    <th>Mes</th>
-                    <th>Semana</th>
-                    <th>UDN</th>
-                    <th>Área</th>
-                    <th className="text-right">Cantidad</th>
-                    <th className="text-right">C. Unitario</th>
-                    <th className="text-right">Total</th>
+                    <th style={{ textAlign: 'left'  }}>Fecha</th>
+                    <th style={{ textAlign: 'left'  }}>Mes</th>
+                    <th style={{ textAlign: 'left'  }}>Semana</th>
+                    <th style={{ textAlign: 'left'  }}>UDN</th>
+                    <th style={{ textAlign: 'left'  }}>Área</th>
+                    <th style={{ textAlign: 'right' }}>Cantidad</th>
+                    <th style={{ textAlign: 'right' }}>C. Unitario</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {history.map((t, i) => (
                     <tr key={i}>
-                      <td className="mono text-xs">{t.fecha}</td>
-                      <td>{t.mes}</td>
-                      <td>Sem. {t.semana}</td>
-                      <td><span className="badge badge-neutral">{t.udn}</span></td>
-                      <td className="text-surface-500">{t.area}</td>
-                      <td className="text-right mono">{fmtNum(t.cantidad)}</td>
-                      <td className="text-right mono">{fmtMXNDec(t.costoUnitario)}</td>
-                      <td className="text-right mono font-medium">{fmtMXN(t.total)}</td>
+                      <td className="mono text-xs"    style={{ textAlign: 'left'  }}>{t.fecha}</td>
+                      <td                             style={{ textAlign: 'left'  }}>{t.mes}</td>
+                      <td                             style={{ textAlign: 'left'  }}>Sem. {t.semana}</td>
+                      <td                             style={{ textAlign: 'left'  }}><span className="badge badge-neutral">{t.udn}</span></td>
+                      <td className="text-surface-500" style={{ textAlign: 'left'  }}>{t.area}</td>
+                      <td className="mono"            style={{ textAlign: 'right' }}>{fmtNum(t.cantidad)}</td>
+                      <td className="mono"            style={{ textAlign: 'right' }}>{fmtMXNDec(t.costoUnitario)}</td>
+                      <td className="mono font-medium" style={{ textAlign: 'right' }}>{fmtMXN(t.total)}</td>
                     </tr>
                   ))}
                   <tr className="bg-surface-50 font-bold border-t border-surface-200">
-                    <td colSpan={5}>Total</td>
-                    <td className="text-right mono">{fmtNum(totalQty)}</td>
-                    <td className="text-right mono">{fmtMXNDec(avgPrice)}</td>
-                    <td className="text-right mono">{fmtMXN(totalCosto)}</td>
+                    <td colSpan={5} style={{ textAlign: 'left'  }}>Total</td>
+                    <td className="mono" style={{ textAlign: 'right' }}>{fmtNum(totalQty)}</td>
+                    <td className="mono" style={{ textAlign: 'right' }}>{fmtMXNDec(avgPrice)}</td>
+                    <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(totalCosto)}</td>
                   </tr>
                 </tbody>
               </table>
@@ -213,18 +213,18 @@ export default function Productos() {
             <table className="table-base">
               <thead>
                 <tr>
-                  <th className="col-center">#</th>
-                  <th className="col-left">Producto</th>
-                  <th className="col-right">Costo Total</th>
+                  <th style={{ textAlign: 'center' }}>#</th>
+                  <th style={{ textAlign: 'left'   }}>Producto</th>
+                  <th style={{ textAlign: 'right'  }}>Costo Total</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {pagedRows.map((p, i) => (
                   <tr key={p.producto}>
-                    <td className="text-surface-400 font-mono text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                    <td className="font-medium">{p.producto}</td>
-                    <td className="text-right mono">{fmtMXN(p.total)}</td>
+                    <td className="text-surface-400 font-mono text-xs" style={{ textAlign: 'center' }}>{(page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td className="font-medium" style={{ textAlign: 'left'  }}>{p.producto}</td>
+                    <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(p.total)}</td>
                     <td>
                       <button
                         onClick={() => { setSelected(p.producto); setSearch(p.producto) }}

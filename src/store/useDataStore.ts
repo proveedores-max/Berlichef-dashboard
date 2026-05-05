@@ -53,6 +53,7 @@ export const useDataStore = create<DataStore>((set) => ({
       const res = await fetch('/.netlify/functions/sheets')
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`)
       const data: SheetData = await res.json()
+      console.log('[store] estadoCuenta recibido:', data.estadoCuenta)
       set({ data, loading: false })
     } catch (e) {
       set({ error: e instanceof Error ? e.message : 'Error desconocido', loading: false })

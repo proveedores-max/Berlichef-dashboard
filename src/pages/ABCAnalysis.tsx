@@ -103,13 +103,13 @@ export default function ABCAnalysis() {
           <table className="table-base">
             <thead>
               <tr>
-                <th className="col-center">#</th>
-                <th className="col-left">Producto</th>
-                <th className="col-left">Categoría</th>
-                <th className="col-right">Costo Total</th>
-                <th className="col-right">% del Total</th>
-                <th className="col-right">% Acumulado</th>
-                <th className="col-center">Clase</th>
+                <th style={{ textAlign: 'center' }}>#</th>
+                <th style={{ textAlign: 'left'   }}>Producto</th>
+                <th style={{ textAlign: 'left'   }}>Categoría</th>
+                <th style={{ textAlign: 'right'  }}>Costo Total</th>
+                <th style={{ textAlign: 'right'  }}>% del Total</th>
+                <th style={{ textAlign: 'right'  }}>% Acumulado</th>
+                <th style={{ textAlign: 'center' }}>Clase</th>
               </tr>
             </thead>
             <tbody>
@@ -117,11 +117,11 @@ export default function ABCAnalysis() {
                 const cfg = classConfig[item.clase]
                 return (
                   <tr key={item.producto}>
-                    <td className="text-surface-400 mono text-xs">{i + 1}</td>
-                    <td className="font-medium max-w-[200px] truncate">{item.producto}</td>
-                    <td className="text-surface-500 text-xs">{item.categoria}</td>
-                    <td className="text-right mono">{fmtMXN(item.total)}</td>
-                    <td className="text-right text-surface-500">{fmtPct(item.pct, 2)}</td>
+                    <td className="text-surface-400 mono text-xs" style={{ textAlign: 'center' }}>{i + 1}</td>
+                    <td className="font-medium max-w-[200px] truncate" style={{ textAlign: 'left'   }}>{item.producto}</td>
+                    <td className="text-surface-500 text-xs"          style={{ textAlign: 'left'   }}>{item.categoria}</td>
+                    <td className="mono"                               style={{ textAlign: 'right'  }}>{fmtMXN(item.total)}</td>
+                    <td className="text-surface-500"                   style={{ textAlign: 'right'  }}>{fmtPct(item.pct, 2)}</td>
                     <td className="w-40">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-surface-100 rounded-full overflow-hidden">
@@ -130,12 +130,12 @@ export default function ABCAnalysis() {
                             style={{ width: `${Math.min(item.pctAcum, 100)}%` }}
                           />
                         </div>
-                        <span className="text-xs mono text-surface-500 w-12 text-right">
+                        <span className="text-xs mono text-surface-500 w-12" style={{ textAlign: 'right' }}>
                           {fmtPct(item.pctAcum, 1)}
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td style={{ textAlign: 'center' }}>
                       <span className={`badge ${cfg.badge}`}>{item.clase}</span>
                     </td>
                   </tr>

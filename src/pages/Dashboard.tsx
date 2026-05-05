@@ -165,33 +165,33 @@ export default function Dashboard() {
                 <table className="table-base">
                   <thead>
                     <tr>
-                      <th className="col-left">Unidad</th>
-                      <th className="col-right">Ventas netas</th>
-                      <th className="col-right">Costo venta</th>
-                      <th className="col-right">Utilidad bruta</th>
-                      <th className="col-center">Food cost</th>
-                      <th className="col-right">EBITDA</th>
-                      <th className="col-right">EBITDA %</th>
+                      <th style={{ textAlign: 'left'   }}>Unidad</th>
+                      <th style={{ textAlign: 'right'  }}>Ventas netas</th>
+                      <th style={{ textAlign: 'right'  }}>Costo venta</th>
+                      <th style={{ textAlign: 'right'  }}>Utilidad bruta</th>
+                      <th style={{ textAlign: 'center' }}>Food cost</th>
+                      <th style={{ textAlign: 'right'  }}>EBITDA</th>
+                      <th style={{ textAlign: 'right'  }}>EBITDA %</th>
                     </tr>
                   </thead>
                   <tbody>
                     {udnSummaries.map((u) => (
                       <tr key={u.udn}>
-                        <td style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.udn}</td>
-                        <td className="mono text-right">{fmtMXN(u.ventasNetas)}</td>
-                        <td className="mono text-right">{fmtMXN(u.costoVenta)}</td>
-                        <td className={`mono font-medium text-right ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        <td style={{ textAlign: 'left', fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.udn}</td>
+                        <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(u.ventasNetas)}</td>
+                        <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(u.costoVenta)}</td>
+                        <td className={`mono font-medium ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`} style={{ textAlign: 'right' }}>
                           {fmtMXN(u.utilidadBruta)}
                         </td>
-                        <td className="col-center">
+                        <td style={{ textAlign: 'center' }}>
                           <span className={`badge ${u.foodCostPct > 35 ? 'badge-negative' : 'badge-positive'}`}>
                             {fmtPct(u.foodCostPct)}
                           </span>
                         </td>
-                        <td className={`mono font-medium text-right ${u.ebitda >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        <td className={`mono font-medium ${u.ebitda >= 0 ? 'text-positive' : 'text-negative'}`} style={{ textAlign: 'right' }}>
                           {fmtMXN(u.ebitda)}
                         </td>
-                        <td className={`text-right ${u.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'}`}>
+                        <td className={u.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'} style={{ textAlign: 'right' }}>
                           {fmtPct(u.ebitdaPct)}
                         </td>
                       </tr>

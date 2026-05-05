@@ -55,11 +55,10 @@ function TrackZones({ thresholds, invertColors, min, max }: {
         if (pctEnd <= pctStart) return null
         const [x1, y1] = arcPoint(pctStart)
         const [x2, y2] = arcPoint(pctEnd)
-        const large = (pctEnd - pctStart) > 0.5 ? 1 : 0
         return (
           <path
             key={i}
-            d={`M ${x1.toFixed(2)},${y1.toFixed(2)} A ${R},${R} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)}`}
+            d={`M ${x1.toFixed(2)},${y1.toFixed(2)} A ${R},${R} 0 0,1 ${x2.toFixed(2)},${y2.toFixed(2)}`}
             fill="none"
             stroke={z.color}
             strokeOpacity="0.2"
@@ -92,10 +91,10 @@ export default function GaugeKPI({
   // Animate from 0 on first render
   const displayPct = mounted ? (clamped - min) / (max - min) : 0
 
-  // Value arc endpoint — use 0.9999 cap to avoid degenerate path when pct=1
-  const arcPct          = Math.min(0.9999, displayPct)
-  const [endX, endY]    = arcPoint(arcPct)
-  const largeArc        = displayPct > 0.5 ? 1 : 0
+  // Value arc endpoint — cap at 0.9999 to avoid degenerate path when start===end
+  // large-arc-flag is ALWAYS 0: any sub-arc of our 180° semicircle is ≤ 180°
+  const arcPct       = Math.min(0.9999, displayPct)
+  const [endX, endY] = arcPoint(arcPct)
 
   // Needle tip follows the arc end
   const realPct         = (clamped - min) / (max - min)
@@ -135,7 +134,7 @@ export default function GaugeKPI({
         {/* 3. Value arc */}
         {!noData && (
           <path
-            d={`M 28,95 A ${R},${R} 0 ${largeArc},1 ${endX.toFixed(2)},${endY.toFixed(2)}`}
+            d={`M 28,95 A ${R},${R} 0 0,1 ${endX.toFixed(2)},${endY.toFixed(2)}`}
             fill="none"
             stroke={color}
             strokeWidth="13"

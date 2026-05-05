@@ -118,8 +118,8 @@ export default function Reportes() {
       title:       'Costo por categoría',
       description: 'Resumen de costo de venta agrupado por categoría',
       count:       categories.length,
-      onExport:    () => exportCategories(categories),
-      disabled:    categories.length === 0,
+      onExport:    () => exportCategories(transactions),
+      disabled:    transactions.length === 0,
     },
     {
       reportKey:   'comparativoUDN',
@@ -144,7 +144,7 @@ export default function Reportes() {
   const handleMultiDownload = async () => {
     setIsDownloading(true)
     try {
-      const exportData: MultiExportData = { transactions, abcItems, categories, udnSummaries, financials }
+      const exportData: MultiExportData = { transactions, abcItems, categories: transactions, udnSummaries, financials }
       await downloadMultipleReports(selectedReports as Set<string>, exportData)
     } finally {
       setIsDownloading(false)

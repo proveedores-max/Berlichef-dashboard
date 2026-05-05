@@ -5,6 +5,7 @@ import {
   useFilteredTransactions,
   useFilteredFinancials,
   useFilteredSales,
+  useFilteredEstadoCuenta,
   computeKPIs,
   computeUDNSummaries,
 } from '@/store/useDataStore'
@@ -19,13 +20,14 @@ export default function EstadoResultados() {
   const transactions = useFilteredTransactions()
   const financials = useFilteredFinancials()
   const sales = useFilteredSales()
+  const estadoCuenta = useFilteredEstadoCuenta()
 
   useEffect(() => {
     if (!data) fetchData()
   }, [data, fetchData])
 
-  const kpis = computeKPIs(transactions, financials, sales)
-  const udnSummaries = computeUDNSummaries(transactions, financials, sales)
+  const kpis = computeKPIs(transactions, financials, sales, estadoCuenta)
+  const udnSummaries = computeUDNSummaries(transactions, financials, sales, estadoCuenta)
 
   const ebitdaByUDN = udnSummaries
     .filter((u) => u.ventasNetas > 0)
@@ -40,7 +42,7 @@ export default function EstadoResultados() {
     { label: 'EBITDA', value: kpis.ebitda, pct: kpis.ebitdaPct, bold: true, indent: false, deduction: false },
   ]
 
-  const totals = computeKPIs(transactions, financials, sales)
+  const totals = kpis
 
   return (
     <div className="animate-fade-in">
@@ -62,9 +64,9 @@ export default function EstadoResultados() {
           <table className="table-base">
             <thead>
               <tr>
-                <th>Concepto</th>
-                <th className="text-right">Importe</th>
-                <th className="text-right">% Ventas</th>
+                <th style={{ textAlign: 'left'  }}>Concepto</th>
+                <th style={{ textAlign: 'right' }}>Importe</th>
+                <th style={{ textAlign: 'right' }}>% Ventas</th>
               </tr>
             </thead>
             <tbody>
@@ -73,13 +75,13 @@ export default function EstadoResultados() {
                   key={row.label}
                   className={row.bold ? 'bg-surface-50' : ''}
                 >
-                  <td className={`${row.indent ? 'pl-8' : ''} ${row.bold ? 'font-bold text-surface-900' : ''}`}>
+                  <td className={`${row.indent ? 'pl-8' : ''} ${row.bold ? 'font-bold text-surface-900' : ''}`} style={{ textAlign: 'left' }}>
                     {row.label}
                   </td>
-                  <td className={`text-right mono ${row.deduction ? 'text-negative' : row.bold ? 'font-bold text-surface-900' : ''} ${!row.deduction && row.value < 0 ? 'text-negative' : ''}`}>
+                  <td className={`mono ${row.deduction ? 'text-negative' : row.bold ? 'font-bold text-surface-900' : ''} ${!row.deduction && row.value < 0 ? 'text-negative' : ''}`} style={{ textAlign: 'right' }}>
                     {fmtMXN(row.value)}
                   </td>
-                  <td className={`text-right ${row.pct < 0 ? 'text-negative' : 'text-surface-500'}`}>
+                  <td className={`${row.pct < 0 ? 'text-negative' : 'text-surface-500'}`} style={{ textAlign: 'right' }}>
                     {fmtPct(row.pct)}
                   </td>
                 </tr>
@@ -130,28 +132,28 @@ export default function EstadoResultados() {
             <tbody>
               {udnSummaries.map((u) => (
                 <tr key={u.udn}>
-                  <td className="font-medium">{u.udn}</td>
-                  <td className="text-right mono">{fmtMXN(u.ventasNetas)}</td>
-                  <td className="text-right mono">{fmtMXN(u.costoVenta)}</td>
-                  <td className={`text-right mono ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtMXN(u.utilidadBruta)}</td>
-                  <td className={`text-right ${u.utilidadBrutaPct >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtPct(u.utilidadBrutaPct)}</td>
-                  <td className="text-right mono">{fmtMXN(u.manoDeObra)}</td>
-                  <td className="text-right mono">{fmtMXN(u.gastosOperativos)}</td>
-                  <td className={`text-right mono font-semibold ${u.ebitda >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtMXN(u.ebitda)}</td>
-                  <td className={`text-right ${u.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtPct(u.ebitdaPct)}</td>
+                  <td className="font-medium" style={{ textAlign: 'left'  }}>{u.udn}</td>
+                  <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(u.ventasNetas)}</td>
+                  <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(u.costoVenta)}</td>
+                  <td className={`mono ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}    style={{ textAlign: 'right' }}>{fmtMXN(u.utilidadBruta)}</td>
+                  <td className={u.utilidadBrutaPct >= 0 ? 'text-positive' : 'text-negative'}            style={{ textAlign: 'right' }}>{fmtPct(u.utilidadBrutaPct)}</td>
+                  <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(u.manoDeObra)}</td>
+                  <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(u.gastosOperativos)}</td>
+                  <td className={`mono font-semibold ${u.ebitda >= 0 ? 'text-positive' : 'text-negative'}`} style={{ textAlign: 'right' }}>{fmtMXN(u.ebitda)}</td>
+                  <td className={u.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'}                  style={{ textAlign: 'right' }}>{fmtPct(u.ebitdaPct)}</td>
                 </tr>
               ))}
               {/* Totals row */}
               <tr className="bg-surface-50 font-bold border-t border-surface-200">
-                <td>Total</td>
-                <td className="text-right mono">{fmtMXN(totals.ventasNetas)}</td>
-                <td className="text-right mono">{fmtMXN(totals.costoVenta)}</td>
-                <td className={`text-right mono ${totals.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtMXN(totals.utilidadBruta)}</td>
-                <td className={`text-right ${totals.utilidadBrutaPct >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtPct(totals.utilidadBrutaPct)}</td>
-                <td className="text-right mono">{fmtMXN(totals.manoDeObra)}</td>
-                <td className="text-right mono">{fmtMXN(totals.gastosOperativos)}</td>
-                <td className={`text-right mono ${totals.ebitda >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtMXN(totals.ebitda)}</td>
-                <td className={`text-right ${totals.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'}`}>{fmtPct(totals.ebitdaPct)}</td>
+                <td style={{ textAlign: 'left'  }}>Total</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(totals.ventasNetas)}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(totals.costoVenta)}</td>
+                <td className={`mono ${totals.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`}    style={{ textAlign: 'right' }}>{fmtMXN(totals.utilidadBruta)}</td>
+                <td className={totals.utilidadBrutaPct >= 0 ? 'text-positive' : 'text-negative'}            style={{ textAlign: 'right' }}>{fmtPct(totals.utilidadBrutaPct)}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(totals.manoDeObra)}</td>
+                <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(totals.gastosOperativos)}</td>
+                <td className={`mono ${totals.ebitda >= 0 ? 'text-positive' : 'text-negative'}`}            style={{ textAlign: 'right' }}>{fmtMXN(totals.ebitda)}</td>
+                <td className={totals.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'}                  style={{ textAlign: 'right' }}>{fmtPct(totals.ebitdaPct)}</td>
               </tr>
             </tbody>
           </table>

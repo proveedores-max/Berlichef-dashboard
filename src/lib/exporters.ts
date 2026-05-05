@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
-import type { Transaction, ABCItem, CategoryCost, UDNSummary, Financial } from '@/types'
+import type { Transaction, ABCItem, UDNSummary, Financial } from '@/types'
 import { numFmt, EXCEL_COLORS } from '@/utils/excelStyles'
 import {
   setWorkbookProps,
@@ -95,32 +95,66 @@ function buildAbcWS(wb: ExcelJS.Workbook, rows: ABCItem[], filters = '') {
   addDataRow(ws, ['', 'TOTAL', '', grandTotalABC, 100, '', ''], cols, rows.length, true)
 }
 
-function buildCategoriesWS(wb: ExcelJS.Workbook, rows: CategoryCost[], filters = '') {
+function buildCategoriesWS(wb: ExcelJS.Workbook, transactions: Transaction[], filters = '') {
   const ws = wb.addWorksheet('Por Categoría')
   setSheetProps(ws)
 
+  // Two-level grouping: categoría → área
+  const catMap: Record<string, Record<string, number>> = {}
+  let grandTotal = 0
+  transactions.forEach((t) => {
+    if (!catMap[t.categoria]) catMap[t.categoria] = {}
+    catMap[t.categoria][t.area] = (catMap[t.categoria][t.area] ?? 0) + t.total
+    grandTotal += t.total
+  })
+  const grouped = Object.entries(catMap)
+    .map(([categoria, areas]) => ({
+      categoria,
+      total: Object.values(areas).reduce((s, v) => s + v, 0),
+      areas: Object.entries(areas)
+        .map(([area, total]) => ({ area, total }))
+        .sort((a, b) => b.total - a.total),
+    }))
+    .sort((a, b) => b.total - a.total)
+
   const cols: ColConfig[] = [
-    { header: '#',             key: 'num',      width: 7,  align: 'center', numFmt: numFmt.integer },
-    { header: 'Categoría',     key: 'categoria',width: 30 },
-    { header: 'Total',         key: 'total',    width: 18, numFmt: numFmt.currency, align: 'right' },
-    { header: '% Participación',key: 'pct',     width: 18, numFmt: numFmt.percent,  align: 'right' },
+    { header: '#',           key: 'num',      width: 7,  align: 'center', numFmt: numFmt.integer },
+    { header: 'Categoría',   key: 'categoria',width: 28 },
+    { header: 'Área',        key: 'area',     width: 22 },
+    { header: 'Total',       key: 'total',    width: 18, numFmt: numFmt.currency, align: 'right' },
+    { header: '% del Total', key: 'pct',      width: 16, numFmt: numFmt.percent,  align: 'right' },
   ]
 
   buildExcelHeader(ws, 'Costo por Categoría', filters, cols.length)
   applyColumnConfig(ws, cols)
 
-  const maxPct = Math.max(...rows.map((r) => r.pct), 1)
-  rows.forEach((r, i) => {
-    const row = addDataRow(ws, [i + 1, r.categoria, r.total, r.pct], cols, i)
-    const barCell = row.getCell(4)
-    const intensity = Math.round((r.pct / maxPct) * 180)
-    const hex = intensity.toString(16).padStart(2, '0').toUpperCase()
-    barCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: `FF${hex}C4DE` } }
-    barCell.font = { name: 'Calibri', size: 10, bold: r.pct > 20, color: { argb: 'FF0F172A' } }
+  let flatIdx = 0
+  grouped.forEach((cat, catIdx) => {
+    const catPct = grandTotal > 0 ? (cat.total / grandTotal) * 100 : 0
+
+    // Parent row — category (bold, light-blue background)
+    const pRow = addDataRow(ws, [catIdx + 1, cat.categoria, '', cat.total, catPct], cols, flatIdx++)
+    pRow.eachCell({ includeEmpty: true }, (cell) => {
+      cell.font = { name: 'Calibri', bold: true, size: 10, color: { argb: 'FF1E3A8A' } }
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } }
+    })
+    // Re-assert number formats after eachCell overrides
+    const totalCell = pRow.getCell(4)
+    totalCell.numFmt    = numFmt.currency
+    totalCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    const pctCell = pRow.getCell(5)
+    pctCell.numFmt    = numFmt.percent
+    pctCell.alignment = { horizontal: 'right', vertical: 'middle' }
+
+    // Child rows — areas (indented, normal alternating style)
+    cat.areas.forEach((area) => {
+      const areaPct = grandTotal > 0 ? (area.total / grandTotal) * 100 : 0
+      const cRow = addDataRow(ws, ['', '', area.area, area.total, areaPct], cols, flatIdx++)
+      cRow.getCell(3).alignment = { indent: 3, horizontal: 'left', vertical: 'middle' }
+    })
   })
 
-  const grandTotal = rows.reduce((s, r) => s + r.total, 0)
-  addDataRow(ws, ['', 'TOTAL', grandTotal, 100], cols, rows.length, true)
+  addDataRow(ws, ['', 'TOTAL', '', grandTotal, 100], cols, 0, true)
 }
 
 function colorCell(cell: ExcelJS.Cell, value: number, lowGood: boolean, thresholds: [number, number]) {
@@ -246,10 +280,10 @@ export async function exportABC(rows: ABCItem[], filters = '', filename?: string
   await saveWorkbook(wb, filename ?? `berlichef_abc_${todayStr()}.xlsx`)
 }
 
-export async function exportCategories(rows: CategoryCost[], filters = '', filename?: string) {
+export async function exportCategories(transactions: Transaction[], filters = '', filename?: string) {
   const wb = new ExcelJS.Workbook()
   setWorkbookProps(wb)
-  buildCategoriesWS(wb, rows, filters)
+  buildCategoriesWS(wb, transactions, filters)
   await saveWorkbook(wb, filename ?? `berlichef_categorias_${todayStr()}.xlsx`)
 }
 
@@ -272,7 +306,7 @@ export async function exportFinancials(rows: Financial[], filters = '', filename
 export interface MultiExportData {
   transactions:  Transaction[]
   abcItems:      ABCItem[]
-  categories:    CategoryCost[]
+  categories:    Transaction[]
   udnSummaries:  UDNSummary[]
   financials:    Financial[]
 }

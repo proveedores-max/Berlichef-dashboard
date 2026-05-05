@@ -146,8 +146,8 @@ export default function CostoVenta() {
         <div className="p-5 border-b border-surface-100 flex items-center justify-between">
           <p className="text-sm font-semibold text-surface-700">Desglose por {groupBy}</p>
           <button
-            onClick={() => exportCategories(categoryCosts)}
-            disabled={categoryCosts.length === 0}
+            onClick={() => exportCategories(transactions)}
+            disabled={transactions.length === 0}
             className="btn-excel"
           >
             <Download size={13} />
@@ -159,30 +159,30 @@ export default function CostoVenta() {
             <table className="table-base">
               <thead>
                 <tr>
-                  <th className="col-left">Categoría</th>
-                  <th className="col-left">Área</th>
-                  <th className="col-right">Costo Total</th>
-                  <th className="col-right">% del Total</th>
-                  <th className="col-right">Registros</th>
+                  <th style={{ textAlign: 'left'  }}>Categoría</th>
+                  <th style={{ textAlign: 'left'  }}>Área</th>
+                  <th style={{ textAlign: 'right' }}>Costo Total</th>
+                  <th style={{ textAlign: 'right' }}>% del Total</th>
+                  <th style={{ textAlign: 'right' }}>Registros</th>
                 </tr>
               </thead>
               <tbody>
                 {categoriaAreaGrouped.map((cat) => (
                   <>
                     <tr key={cat.categoria} className="category-row">
-                      <td className="font-semibold" style={{ color: '#0F172A', fontSize: 13.5 }}>{cat.categoria}</td>
-                      <td />
-                      <td className="text-right mono font-semibold">{fmtMXN(cat.total)}</td>
-                      <td className="text-right text-surface-500">{fmtPct(totalCosto > 0 ? (cat.total / totalCosto) * 100 : 0)}</td>
-                      <td className="text-right text-surface-400">—</td>
+                      <td className="font-semibold" style={{ color: '#0F172A', fontSize: 13.5, textAlign: 'left'  }}>{cat.categoria}</td>
+                      <td style={{ textAlign: 'left' }} />
+                      <td className="mono font-semibold" style={{ textAlign: 'right' }}>{fmtMXN(cat.total)}</td>
+                      <td className="text-surface-500"   style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (cat.total / totalCosto) * 100 : 0)}</td>
+                      <td className="text-surface-400"   style={{ textAlign: 'right' }}>—</td>
                     </tr>
                     {cat.areas.map((area) => (
                       <tr key={`${cat.categoria}-${area.area}`} className="area-row">
-                        <td />
-                        <td style={{ paddingLeft: 28, color: '#475569', fontSize: 13 }}>{area.area}</td>
-                        <td className="text-right mono">{fmtMXN(area.total)}</td>
-                        <td className="text-right text-surface-500">{fmtPct(totalCosto > 0 ? (area.total / totalCosto) * 100 : 0)}</td>
-                        <td className="text-right mono text-surface-400">{fmtNum(area.count)}</td>
+                        <td style={{ textAlign: 'left' }} />
+                        <td style={{ paddingLeft: 28, color: '#475569', fontSize: 13, textAlign: 'left' }}>{area.area}</td>
+                        <td className="mono"             style={{ textAlign: 'right' }}>{fmtMXN(area.total)}</td>
+                        <td className="text-surface-500" style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (area.total / totalCosto) * 100 : 0)}</td>
+                        <td className="mono text-surface-400" style={{ textAlign: 'right' }}>{fmtNum(area.count)}</td>
                       </tr>
                     ))}
                   </>
@@ -193,21 +193,21 @@ export default function CostoVenta() {
             <table className="table-base">
               <thead>
                 <tr>
-                  <th>Grupo</th>
-                  <th className="text-right">Total</th>
-                  <th className="text-right">%</th>
-                  <th>Participación</th>
+                  <th style={{ textAlign: 'left'  }}>Grupo</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
+                  <th style={{ textAlign: 'right' }}>%</th>
+                  <th style={{ textAlign: 'left'  }}>Participación</th>
                 </tr>
               </thead>
               <tbody>
                 {grouped.map((row) => (
                   <tr key={row.name}>
-                    <td className="font-medium">{row.name}</td>
-                    <td className="text-right mono">{fmtMXN(row.value)}</td>
-                    <td className="text-right text-surface-500">
+                    <td className="font-medium" style={{ textAlign: 'left'  }}>{row.name}</td>
+                    <td className="mono"        style={{ textAlign: 'right' }}>{fmtMXN(row.value)}</td>
+                    <td className="text-surface-500" style={{ textAlign: 'right' }}>
                       {fmtPct(totalCosto > 0 ? (row.value / totalCosto) * 100 : 0)}
                     </td>
-                    <td className="w-32">
+                    <td className="w-32" style={{ textAlign: 'left' }}>
                       <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-brand-400 rounded-full"
@@ -240,27 +240,27 @@ export default function CostoVenta() {
           <table className="table-base">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>UDN</th>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Área</th>
-                <th className="text-right">Cant.</th>
-                <th className="text-right">C. Unitario</th>
-                <th className="text-right">Total</th>
+                <th style={{ textAlign: 'left'  }}>Fecha</th>
+                <th style={{ textAlign: 'left'  }}>UDN</th>
+                <th style={{ textAlign: 'left'  }}>Producto</th>
+                <th style={{ textAlign: 'left'  }}>Categoría</th>
+                <th style={{ textAlign: 'left'  }}>Área</th>
+                <th style={{ textAlign: 'right' }}>Cant.</th>
+                <th style={{ textAlign: 'right' }}>C. Unitario</th>
+                <th style={{ textAlign: 'right' }}>Total</th>
               </tr>
             </thead>
             <tbody>
               {paged.map((t, i) => (
                 <tr key={i}>
-                  <td className="mono text-xs">{t.fecha}</td>
-                  <td><span className="badge badge-neutral">{t.udn}</span></td>
-                  <td className="max-w-[180px] truncate">{t.producto}</td>
-                  <td className="text-surface-500 text-xs">{t.categoria}</td>
-                  <td className="text-surface-500 text-xs">{t.area}</td>
-                  <td className="text-right mono">{fmtNum(t.cantidad)}</td>
-                  <td className="text-right mono">{fmtMXN(t.costoUnitario)}</td>
-                  <td className="text-right mono font-medium">{fmtMXN(t.total)}</td>
+                  <td className="mono text-xs"    style={{ textAlign: 'left'  }}>{t.fecha}</td>
+                  <td                             style={{ textAlign: 'left'  }}><span className="badge badge-neutral">{t.udn}</span></td>
+                  <td className="max-w-[180px] truncate" style={{ textAlign: 'left'  }}>{t.producto}</td>
+                  <td className="text-surface-500 text-xs" style={{ textAlign: 'left'  }}>{t.categoria}</td>
+                  <td className="text-surface-500 text-xs" style={{ textAlign: 'left'  }}>{t.area}</td>
+                  <td className="mono"            style={{ textAlign: 'right' }}>{fmtNum(t.cantidad)}</td>
+                  <td className="mono"            style={{ textAlign: 'right' }}>{fmtMXN(t.costoUnitario)}</td>
+                  <td className="mono font-medium" style={{ textAlign: 'right' }}>{fmtMXN(t.total)}</td>
                 </tr>
               ))}
             </tbody>

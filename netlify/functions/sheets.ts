@@ -165,6 +165,11 @@ export const handler: Handler = async () => {
       fetchSheet('Estado de Cuenta!A:M').catch(() => [] as string[][]),
     ])
 
+    const estadoCuenta = parseEstadoCuenta(estadoRows)
+    console.log('[sheets] Estado de Cuenta — raw row count:', estadoRows.length)
+    console.log('[sheets] Estado de Cuenta — raw rows (excluding header):', JSON.stringify(estadoRows.slice(1)))
+    console.log('[sheets] Estado de Cuenta — parsed records:', JSON.stringify(estadoCuenta))
+
     return {
       statusCode: 200,
       headers,
@@ -173,7 +178,7 @@ export const handler: Handler = async () => {
         financials:    parseFinancials(gastosRows),
         sales:         parseSales(ventasRows),
         products:      parseProducts(productosRows),
-        estadoCuenta:  parseEstadoCuenta(estadoRows),
+        estadoCuenta,
         lastUpdated:   new Date().toISOString(),
       }),
     }
