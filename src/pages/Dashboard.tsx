@@ -38,12 +38,12 @@ export default function Dashboard() {
     : 0
 
   const gaugeValues: Record<string, number> = {
-    margenBruto:  kpis.utilidadBrutaPct,
-    foodCost:     kpis.foodCostPct,
-    primeCost:    primeCostPct,
-    margenEbitda: kpis.ebitdaPct,
-    nominaPct:    kpis.manoDeObraPct,
-    gastosOpPct:  kpis.gastosOperativosPct,
+    utilBrutaPct:  kpis.utilidadBrutaPct,
+    foodCostPct:   kpis.foodCostPct,
+    primeCostPct:  primeCostPct,
+    ebitdaPct:     kpis.ebitdaPct,
+    manoObraPct:   kpis.manoDeObraPct,
+    gastosOpPct:   kpis.gastosOperativosPct,
   }
 
   const weeklyData = (() => {

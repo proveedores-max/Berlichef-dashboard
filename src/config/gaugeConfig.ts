@@ -1,12 +1,12 @@
 export interface GaugeThresholds {
-  danger:  number
-  warning: number
-  good:    number
+  danger?:  number
+  warning:  number
+  good?:    number
 }
 
 export interface GaugeConfig {
   label:          string
-  key:            'margenBruto' | 'foodCost' | 'primeCost' | 'margenEbitda' | 'nominaPct' | 'gastosOpPct'
+  key:            'utilBrutaPct' | 'foodCostPct' | 'primeCostPct' | 'ebitdaPct' | 'manoObraPct' | 'gastosOpPct'
   min:            number
   max:            number
   benchmarkLabel: string
@@ -18,56 +18,56 @@ export interface GaugeConfig {
 export const GAUGE_CONFIG: GaugeConfig[] = [
   {
     label: 'MARGEN BRUTO %',
-    key: 'margenBruto',
+    key: 'utilBrutaPct',
     min: 0, max: 100,
     benchmarkLabel: '>70%',
-    thresholds: { danger: 0, warning: 60, good: 70 },
+    thresholds: { warning: 60, good: 70 },
     invertColors: false,
-    tooltip: 'Porcentaje de ventas que queda después del costo de alimentos. Benchmark restaurantes: >70%',
+    tooltip: 'Porcentaje de ventas que queda tras el costo de alimentos. Benchmark: >70%',
   },
   {
     label: 'FOOD COST %',
-    key: 'foodCost',
+    key: 'foodCostPct',
     min: 0, max: 60,
     benchmarkLabel: '<28%',
-    thresholds: { danger: 35, warning: 28, good: 0 },
+    thresholds: { warning: 28, danger: 35 },
     invertColors: true,
-    tooltip: 'Porcentaje del costo de ingredientes sobre ventas. Benchmark restaurantes: 20–28%',
+    tooltip: 'Costo de ingredientes sobre ventas. Benchmark restaurantes: 20–28%',
   },
   {
     label: 'PRIME COST %',
-    key: 'primeCost',
+    key: 'primeCostPct',
     min: 0, max: 100,
     benchmarkLabel: '<60%',
-    thresholds: { danger: 70, warning: 60, good: 0 },
+    thresholds: { warning: 60, danger: 70 },
     invertColors: true,
-    tooltip: 'Costo de alimentos + nómina sobre ventas. El indicador más importante en restaurantes. Benchmark: <60%',
+    tooltip: 'Costo de alimentos + nómina sobre ventas. Indicador clave. Benchmark: <60%',
   },
   {
     label: 'MARGEN EBITDA %',
-    key: 'margenEbitda',
+    key: 'ebitdaPct',
     min: 0, max: 40,
     benchmarkLabel: '>18%',
-    thresholds: { danger: 0, warning: 10, good: 18 },
+    thresholds: { warning: 10, good: 18 },
     invertColors: false,
-    tooltip: 'Rentabilidad operativa antes de impuestos, depreciación y amortización. Benchmark: >18%',
+    tooltip: 'Rentabilidad operativa. Benchmark restaurantes: >18%',
   },
   {
     label: 'NÓMINA %',
-    key: 'nominaPct',
+    key: 'manoObraPct',
     min: 0, max: 60,
     benchmarkLabel: '<32%',
-    thresholds: { danger: 40, warning: 32, good: 0 },
+    thresholds: { warning: 32, danger: 40 },
     invertColors: true,
-    tooltip: 'Costo de mano de obra sobre ventas. Benchmark restaurantes: 28–32%',
+    tooltip: 'Costo de mano de obra sobre ventas. Benchmark: 28–32%',
   },
   {
     label: 'GASTOS OP. %',
     key: 'gastosOpPct',
     min: 0, max: 40,
     benchmarkLabel: '<15%',
-    thresholds: { danger: 20, warning: 15, good: 0 },
+    thresholds: { warning: 15, danger: 20 },
     invertColors: true,
-    tooltip: 'Gastos operativos (sin nómina) sobre ventas. Benchmark restaurantes: <15%',
+    tooltip: 'Gastos operativos (sin nómina) sobre ventas. Benchmark: <15%',
   },
 ]

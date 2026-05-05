@@ -129,8 +129,8 @@ function parseEstadoCuenta(rows: string[][]): EstadoCuenta[] {
   // Fixed column layout: A=Mes B=Unidad C=VentasNetas D=CostoVenta E=UtilidadBruta
   // F=UtilidadBruta% G=ManoDeObra H=GastosOp I=EBITDA J=EBITDA% K=MateriaPrima% L=ManoObra% M=GastosOp%
   return rows.slice(1).filter((r) => r.length > 0 && r[0]).map((r) => ({
-    mes:              r[0] ?? '',
-    udn:              r[1] ?? '',
+    mes:              String(r[0] ?? '').trim(),
+    udn:              String(r[1] ?? '').trim(),
     ventasNetas:      parseMoney(r[2]),
     costoVenta:       parseMoney(r[3]),
     utilidadBruta:    parseMoney(r[4]),

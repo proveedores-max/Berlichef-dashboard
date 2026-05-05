@@ -259,6 +259,10 @@
     color: var(--color-text-secondary);
   }
 
+  /* Category/Area two-level table rows */
+  .category-row { background: #F8FAFC; }
+  .area-row     { background: #FFFFFF; }
+
   /* Column alignment helpers */
   .col-left   { text-align: left; }
   .col-right  { text-align: right; }

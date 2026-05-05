@@ -34,7 +34,7 @@ export default function CostoVenta() {
   const categoryCosts = computeCategoryCosts(transactions)
   const topCategoria = categoryCosts[0]
 
-  // Group data
+  // Group data (flat, for chart)
   const grouped = (() => {
     const map: Record<string, number> = {}
     transactions.forEach((t) => {
@@ -44,6 +44,26 @@ export default function CostoVenta() {
     return Object.entries(map)
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value)
+  })()
+
+  // Two-level breakdown: categoría → área (used only when groupBy === 'categoria')
+  const categoriaAreaGrouped = (() => {
+    const map: Record<string, Record<string, { total: number; count: number }>> = {}
+    transactions.forEach((t) => {
+      if (!map[t.categoria]) map[t.categoria] = {}
+      if (!map[t.categoria][t.area]) map[t.categoria][t.area] = { total: 0, count: 0 }
+      map[t.categoria][t.area].total += t.total
+      map[t.categoria][t.area].count += 1
+    })
+    return Object.entries(map)
+      .map(([cat, areas]) => ({
+        categoria: cat,
+        total: Object.values(areas).reduce((s, a) => s + a.total, 0),
+        areas: Object.entries(areas)
+          .map(([area, d]) => ({ area, ...d }))
+          .sort((a, b) => b.total - a.total),
+      }))
+      .sort((a, b) => b.total - a.total)
   })()
 
   // Weekly by UDN
@@ -135,35 +155,71 @@ export default function CostoVenta() {
           </button>
         </div>
         <div className="overflow-x-auto">
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Grupo</th>
-                <th className="text-right">Total</th>
-                <th className="text-right">%</th>
-                <th>Participación</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grouped.map((row) => (
-                <tr key={row.name}>
-                  <td className="font-medium">{row.name}</td>
-                  <td className="text-right mono">{fmtMXN(row.value)}</td>
-                  <td className="text-right text-surface-500">
-                    {fmtPct(totalCosto > 0 ? (row.value / totalCosto) * 100 : 0)}
-                  </td>
-                  <td className="w-32">
-                    <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-brand-400 rounded-full"
-                        style={{ width: `${totalCosto > 0 ? (row.value / totalCosto) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </td>
+          {groupBy === 'categoria' ? (
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th className="col-left">Categoría</th>
+                  <th className="col-left">Área</th>
+                  <th className="col-right">Costo Total</th>
+                  <th className="col-right">% del Total</th>
+                  <th className="col-right">Registros</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {categoriaAreaGrouped.map((cat) => (
+                  <>
+                    <tr key={cat.categoria} className="category-row">
+                      <td className="font-semibold" style={{ color: '#0F172A', fontSize: 13.5 }}>{cat.categoria}</td>
+                      <td />
+                      <td className="text-right mono font-semibold">{fmtMXN(cat.total)}</td>
+                      <td className="text-right text-surface-500">{fmtPct(totalCosto > 0 ? (cat.total / totalCosto) * 100 : 0)}</td>
+                      <td className="text-right text-surface-400">—</td>
+                    </tr>
+                    {cat.areas.map((area) => (
+                      <tr key={`${cat.categoria}-${area.area}`} className="area-row">
+                        <td />
+                        <td style={{ paddingLeft: 28, color: '#475569', fontSize: 13 }}>{area.area}</td>
+                        <td className="text-right mono">{fmtMXN(area.total)}</td>
+                        <td className="text-right text-surface-500">{fmtPct(totalCosto > 0 ? (area.total / totalCosto) * 100 : 0)}</td>
+                        <td className="text-right mono text-surface-400">{fmtNum(area.count)}</td>
+                      </tr>
+                    ))}
+                  </>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Grupo</th>
+                  <th className="text-right">Total</th>
+                  <th className="text-right">%</th>
+                  <th>Participación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {grouped.map((row) => (
+                  <tr key={row.name}>
+                    <td className="font-medium">{row.name}</td>
+                    <td className="text-right mono">{fmtMXN(row.value)}</td>
+                    <td className="text-right text-surface-500">
+                      {fmtPct(totalCosto > 0 ? (row.value / totalCosto) * 100 : 0)}
+                    </td>
+                    <td className="w-32">
+                      <div className="h-1.5 bg-surface-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-brand-400 rounded-full"
+                          style={{ width: `${totalCosto > 0 ? (row.value / totalCosto) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

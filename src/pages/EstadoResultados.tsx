@@ -116,15 +116,15 @@ export default function EstadoResultados() {
           <table className="table-base">
             <thead>
               <tr>
-                <th>Unidad</th>
-                <th className="text-right">Ventas</th>
-                <th className="text-right">Costo Venta</th>
-                <th className="text-right">U. Bruta</th>
-                <th className="text-right">% U. Bruta</th>
-                <th className="text-right">MO</th>
-                <th className="text-right">Gastos Op.</th>
-                <th className="text-right">EBITDA</th>
-                <th className="text-right">EBITDA %</th>
+                <th style={{ textAlign: 'left'  }}>UNIDAD</th>
+                <th style={{ textAlign: 'right' }}>VENTAS</th>
+                <th style={{ textAlign: 'right' }}>COSTO VENTA</th>
+                <th style={{ textAlign: 'right' }}>U. BRUTA</th>
+                <th style={{ textAlign: 'right' }}>% U. BRUTA</th>
+                <th style={{ textAlign: 'right' }}>MO</th>
+                <th style={{ textAlign: 'right' }}>GASTOS OP.</th>
+                <th style={{ textAlign: 'right' }}>EBITDA</th>
+                <th style={{ textAlign: 'right' }}>EBITDA %</th>
               </tr>
             </thead>
             <tbody>
