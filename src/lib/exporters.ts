@@ -101,11 +101,9 @@ function buildCategoriesWS(wb: ExcelJS.Workbook, transactions: Transaction[], fi
 
   // Two-level grouping: categoría → área
   const catMap: Record<string, Record<string, number>> = {}
-  let grandTotal = 0
   transactions.forEach((t) => {
     if (!catMap[t.categoria]) catMap[t.categoria] = {}
     catMap[t.categoria][t.area] = (catMap[t.categoria][t.area] ?? 0) + t.total
-    grandTotal += t.total
   })
   const grouped = Object.entries(catMap)
     .map(([categoria, areas]) => ({
@@ -116,6 +114,9 @@ function buildCategoriesWS(wb: ExcelJS.Workbook, transactions: Transaction[], fi
         .sort((a, b) => b.total - a.total),
     }))
     .sort((a, b) => b.total - a.total)
+
+  // Single source of truth: sum of category totals (avoids any transaction-level double-count)
+  const grandTotal = grouped.reduce((s, c) => s + c.total, 0)
 
   const cols: ColConfig[] = [
     { header: '#',           key: 'num',      width: 7,  align: 'center', numFmt: numFmt.integer },
@@ -128,25 +129,34 @@ function buildCategoriesWS(wb: ExcelJS.Workbook, transactions: Transaction[], fi
   buildExcelHeader(ws, 'Costo por Categoría', filters, cols.length)
   applyColumnConfig(ws, cols)
 
+  // Style helper: iterate over exactly cols.length cells by index to avoid eachCell phantom-column bugs
+  const styleRow = (row: ExcelJS.Row, font: Partial<ExcelJS.Font>, fill: ExcelJS.Fill, border: Partial<ExcelJS.Borders>) => {
+    cols.forEach((col, i) => {
+      const cell = row.getCell(i + 1)
+      cell.font      = font as ExcelJS.Font
+      cell.fill      = fill
+      cell.border    = border
+      cell.alignment = { horizontal: col.align ?? 'left', vertical: 'middle' }
+      if (col.numFmt) cell.numFmt = col.numFmt
+    })
+  }
+
   let flatIdx = 0
   grouped.forEach((cat, catIdx) => {
     const catPct = grandTotal > 0 ? (cat.total / grandTotal) * 100 : 0
 
-    // Parent row — category (bold, light-blue background)
-    const pRow = addDataRow(ws, [catIdx + 1, cat.categoria, '', cat.total, catPct], cols, flatIdx++)
-    pRow.eachCell({ includeEmpty: true }, (cell) => {
-      cell.font = { name: 'Calibri', bold: true, size: 10, color: { argb: 'FF1E3A8A' } }
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } }
-    })
-    // Re-assert number formats after eachCell overrides
-    const totalCell = pRow.getCell(4)
-    totalCell.numFmt    = numFmt.currency
-    totalCell.alignment = { horizontal: 'right', vertical: 'middle' }
-    const pctCell = pRow.getCell(5)
-    pctCell.numFmt    = numFmt.percent
-    pctCell.alignment = { horizontal: 'right', vertical: 'middle' }
+    // Parent row — bold, light-blue background
+    const pRow = ws.addRow([catIdx + 1, cat.categoria, '', cat.total, catPct])
+    pRow.height = 18
+    styleRow(
+      pRow,
+      { name: 'Calibri', bold: true, size: 10, color: { argb: 'FF1E3A8A' } },
+      { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEFF6FF' } },
+      { bottom: { style: 'thin', color: { argb: 'FFB0C4DE' } } },
+    )
+    flatIdx++
 
-    // Child rows — areas (indented, normal alternating style)
+    // Child rows — indented area name, normal alternating style
     cat.areas.forEach((area) => {
       const areaPct = grandTotal > 0 ? (area.total / grandTotal) * 100 : 0
       const cRow = addDataRow(ws, ['', '', area.area, area.total, areaPct], cols, flatIdx++)
@@ -154,7 +164,15 @@ function buildCategoriesWS(wb: ExcelJS.Workbook, transactions: Transaction[], fi
     })
   })
 
-  addDataRow(ws, ['', 'TOTAL', '', grandTotal, 100], cols, 0, true)
+  // Grand-total row — same index-based styling, numFmt applied explicitly
+  const totalRow = ws.addRow(['', 'TOTAL', '', grandTotal, 100])
+  totalRow.height = 18
+  styleRow(
+    totalRow,
+    { name: 'Calibri', bold: true, size: 11, color: { argb: EXCEL_COLORS.totalText } },
+    { type: 'pattern', pattern: 'solid', fgColor: { argb: EXCEL_COLORS.totalBg } },
+    { top: { style: 'medium', color: { argb: EXCEL_COLORS.headerBg } }, bottom: { style: 'medium', color: { argb: EXCEL_COLORS.headerBg } } },
+  )
 }
 
 function colorCell(cell: ExcelJS.Cell, value: number, lowGood: boolean, thresholds: [number, number]) {

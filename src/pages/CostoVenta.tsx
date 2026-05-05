@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useEffect, useState, Fragment } from 'react'
+import { Download, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import {
   useDataStore,
   useFilteredTransactions,
@@ -21,6 +21,14 @@ export default function CostoVenta() {
   const transactions = useFilteredTransactions()
   const [groupBy, setGroupBy] = useState<GroupBy>('categoria')
   const [page, setPage] = useState(1)
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set())
+
+  const toggleCat = (cat: string) =>
+    setExpandedCats((prev) => {
+      const next = new Set(prev)
+      next.has(cat) ? next.delete(cat) : next.add(cat)
+      return next
+    })
 
   useEffect(() => {
     if (!data) fetchData()
@@ -167,26 +175,39 @@ export default function CostoVenta() {
                 </tr>
               </thead>
               <tbody>
-                {categoriaAreaGrouped.map((cat) => (
-                  <>
-                    <tr key={cat.categoria} className="category-row">
-                      <td className="font-semibold" style={{ color: '#0F172A', fontSize: 13.5, textAlign: 'left'  }}>{cat.categoria}</td>
-                      <td style={{ textAlign: 'left' }} />
-                      <td className="mono font-semibold" style={{ textAlign: 'right' }}>{fmtMXN(cat.total)}</td>
-                      <td className="text-surface-500"   style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (cat.total / totalCosto) * 100 : 0)}</td>
-                      <td className="text-surface-400"   style={{ textAlign: 'right' }}>—</td>
-                    </tr>
-                    {cat.areas.map((area) => (
-                      <tr key={`${cat.categoria}-${area.area}`} className="area-row">
+                {categoriaAreaGrouped.map((cat) => {
+                  const isOpen = expandedCats.has(cat.categoria)
+                  return (
+                    <Fragment key={cat.categoria}>
+                      <tr
+                        className="category-row"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => toggleCat(cat.categoria)}
+                      >
+                        <td style={{ textAlign: 'left' }}>
+                          {isOpen
+                            ? <ChevronDown  size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5, color: '#64748B' }} />
+                            : <ChevronRight size={11} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5, color: '#94A3B8' }} />
+                          }
+                          <span className="font-semibold" style={{ color: '#0F172A', fontSize: 13.5 }}>{cat.categoria}</span>
+                        </td>
                         <td style={{ textAlign: 'left' }} />
-                        <td style={{ paddingLeft: 28, color: '#475569', fontSize: 13, textAlign: 'left' }}>{area.area}</td>
-                        <td className="mono"             style={{ textAlign: 'right' }}>{fmtMXN(area.total)}</td>
-                        <td className="text-surface-500" style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (area.total / totalCosto) * 100 : 0)}</td>
-                        <td className="mono text-surface-400" style={{ textAlign: 'right' }}>{fmtNum(area.count)}</td>
+                        <td className="mono font-semibold" style={{ textAlign: 'right' }}>{fmtMXN(cat.total)}</td>
+                        <td className="text-surface-500"   style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (cat.total / totalCosto) * 100 : 0)}</td>
+                        <td className="text-surface-400"   style={{ textAlign: 'right' }}>—</td>
                       </tr>
-                    ))}
-                  </>
-                ))}
+                      {isOpen && cat.areas.map((area) => (
+                        <tr key={`${cat.categoria}-${area.area}`} className="area-row">
+                          <td style={{ textAlign: 'left' }} />
+                          <td style={{ paddingLeft: 28, color: '#475569', fontSize: 13, textAlign: 'left' }}>{area.area}</td>
+                          <td className="mono"             style={{ textAlign: 'right' }}>{fmtMXN(area.total)}</td>
+                          <td className="text-surface-500" style={{ textAlign: 'right' }}>{fmtPct(totalCosto > 0 ? (area.total / totalCosto) * 100 : 0)}</td>
+                          <td className="mono text-surface-400" style={{ textAlign: 'right' }}>{fmtNum(area.count)}</td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  )
+                })}
               </tbody>
             </table>
           ) : (
