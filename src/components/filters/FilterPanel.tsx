@@ -1,163 +1,217 @@
-import { type ChangeEvent } from 'react'
-import { X, SlidersHorizontal } from 'lucide-react'
+import { useState } from 'react'
+import { SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDataStore, getUniqueValues } from '@/store/useDataStore'
 import type { FilterState } from '@/types'
 
+// ── CheckboxList ─────────────────────────────────────────────────────────────
+
+interface CheckboxListProps {
+  label: string
+  options: string[]
+  selected: string[]
+  onChange: (values: string[]) => void
+}
+
+function CheckboxList({ label, options, selected, onChange }: CheckboxListProps) {
+  const allSelected = selected.length === 0 || selected.length === options.length
+
+  function toggle(value: string) {
+    if (selected.includes(value)) {
+      const next = selected.filter((v) => v !== value)
+      onChange(next.length === options.length ? [] : next)
+    } else {
+      const next = [...selected, value]
+      onChange(next.length === options.length ? [] : next)
+    }
+  }
+
+  function toggleAll() {
+    onChange([])
+  }
+
+  const isChecked = (v: string) => selected.length === 0 || selected.includes(v)
+
+  return (
+    <div>
+      <div className="checkbox-list-label">
+        <span>{label}</span>
+        {!allSelected && (
+          <button onClick={toggleAll}>Todos</button>
+        )}
+      </div>
+      <div className="checkbox-list-scroll">
+        {options.map((opt) => (
+          <label key={opt} className={`checkbox-list-item${isChecked(opt) ? ' checked' : ''}`}>
+            <input
+              type="checkbox"
+              checked={isChecked(opt)}
+              onChange={() => toggle(opt)}
+            />
+            {opt}
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Chip helpers ──────────────────────────────────────────────────────────────
+
+interface Chip { label: string; onRemove: () => void }
+
+// ── FilterPanel ───────────────────────────────────────────────────────────────
+
 export default function FilterPanel() {
   const { data, filters, setFilter, resetFilters } = useDataStore()
+  const [isExpanded, setIsExpanded] = useState(false)
 
   const { meses, udns, areas, categorias } = data
     ? getUniqueValues(data)
     : { meses: [], udns: [], areas: [], categorias: [] }
 
   const semanas = [1, 2, 3, 4, 5]
+  const semanaOpts = semanas.map(String)
 
-  const activeCount = [
-    filters.mes.length > 0,
-    filters.semana.length > 0,
-    filters.udn.length > 0,
-    filters.area.length > 0,
-    filters.categoria.length > 0,
-    filters.producto !== '',
-    filters.fechaDesde !== '',
-    filters.fechaHasta !== '',
-  ].filter(Boolean).length
+  // Build active chips
+  const chips: Chip[] = [
+    ...filters.mes.map((v) => ({
+      label: `Mes: ${v}`,
+      onRemove: () => setFilter('mes', filters.mes.filter((x) => x !== v) as FilterState['mes']),
+    })),
+    ...filters.semana.map((v) => ({
+      label: `Sem. ${v}`,
+      onRemove: () => setFilter('semana', filters.semana.filter((x) => x !== v) as FilterState['semana']),
+    })),
+    ...filters.udn.map((v) => ({
+      label: `UDN: ${v}`,
+      onRemove: () => setFilter('udn', filters.udn.filter((x) => x !== v) as FilterState['udn']),
+    })),
+    ...filters.area.map((v) => ({
+      label: `Área: ${v}`,
+      onRemove: () => setFilter('area', filters.area.filter((x) => x !== v) as FilterState['area']),
+    })),
+    ...filters.categoria.map((v) => ({
+      label: `Cat: ${v}`,
+      onRemove: () => setFilter('categoria', filters.categoria.filter((x) => x !== v) as FilterState['categoria']),
+    })),
+    ...(filters.producto ? [{ label: `Prod: ${filters.producto}`, onRemove: () => setFilter('producto', '') }] : []),
+    ...(filters.fechaDesde ? [{ label: `Desde: ${filters.fechaDesde}`, onRemove: () => setFilter('fechaDesde', '') }] : []),
+    ...(filters.fechaHasta ? [{ label: `Hasta: ${filters.fechaHasta}`, onRemove: () => setFilter('fechaHasta', '') }] : []),
+  ]
 
-  function handleMultiSelect<K extends keyof FilterState>(
-    key: K,
-    e: ChangeEvent<HTMLSelectElement>
-  ) {
-    const values = Array.from(e.target.selectedOptions).map((o) => o.value)
-    if (key === 'semana') {
-      setFilter(key, values.map(Number) as FilterState[K])
-    } else {
-      setFilter(key, values as FilterState[K])
-    }
+  const hasFilters = chips.length > 0
+
+  function handleSemanaChange(values: string[]) {
+    setFilter('semana', values.map(Number) as FilterState['semana'])
   }
 
   return (
-    <div className="card p-4 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal size={15} className="text-surface-400" />
-          <span className="text-sm font-semibold text-surface-700">Filtros</span>
-          {activeCount > 0 && (
-            <span className="badge bg-brand-50 text-brand-600">{activeCount} activo{activeCount !== 1 ? 's' : ''}</span>
+    <div className="mb-6">
+      {/* ── Collapsed bar ── */}
+      <div className="filter-bar-header">
+        <button className="filter-toggle-btn" onClick={() => setIsExpanded((v) => !v)}>
+          <SlidersHorizontal size={14} />
+          Filtros
+        </button>
+
+        <div className="active-filters-chips">
+          {chips.map((chip, i) => (
+            <span key={i} className="filter-chip">
+              {chip.label}
+              <button onClick={chip.onRemove} aria-label="Quitar filtro">×</button>
+            </span>
+          ))}
+          {!hasFilters && (
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Todos los datos</span>
           )}
         </div>
-        {activeCount > 0 && (
-          <button onClick={resetFilters} className="btn-secondary text-xs py-1 px-2.5 gap-1">
-            <X size={12} />
+
+        {hasFilters && (
+          <button className="clear-filters-btn" onClick={resetFilters}>
             Limpiar
           </button>
         )}
+
+        <button className="expand-filters-btn" onClick={() => setIsExpanded((v) => !v)}>
+          {isExpanded ? <><ChevronUp size={13} /> Ocultar</> : <><ChevronDown size={13} /> Mostrar</>}
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        {/* Mes */}
-        <div>
-          <label className="block text-xs font-medium text-surface-500 mb-1">Mes</label>
-          <select
-            multiple
-            size={2}
-            value={filters.mes}
-            onChange={(e) => handleMultiSelect('mes', e)}
-            className="filter-select"
-          >
-            {meses.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
-        </div>
+      {/* ── Expandable body ── */}
+      <div className={`filter-panel-body ${isExpanded ? 'expanded' : 'collapsed'}`}>
+        <div className="filter-panel-inner">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
 
-        {/* Semana */}
-        <div>
-          <label className="block text-xs font-medium text-surface-500 mb-1">Semana</label>
-          <select
-            multiple
-            size={2}
-            value={filters.semana.map(String)}
-            onChange={(e) => handleMultiSelect('semana', e)}
-            className="filter-select"
-          >
-            {semanas.map((s) => <option key={s} value={s}>Semana {s}</option>)}
-          </select>
-        </div>
-
-        {/* UDN */}
-        <div>
-          <label className="block text-xs font-medium text-surface-500 mb-1">UDN</label>
-          <select
-            multiple
-            size={2}
-            value={filters.udn}
-            onChange={(e) => handleMultiSelect('udn', e)}
-            className="filter-select"
-          >
-            {udns.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </div>
-
-        {/* Área */}
-        <div>
-          <label className="block text-xs font-medium text-surface-500 mb-1">Área</label>
-          <select
-            multiple
-            size={2}
-            value={filters.area}
-            onChange={(e) => handleMultiSelect('area', e)}
-            className="filter-select"
-          >
-            {areas.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </div>
-
-        {/* Categoría */}
-        <div>
-          <label className="block text-xs font-medium text-surface-500 mb-1">Categoría</label>
-          <select
-            multiple
-            size={2}
-            value={filters.categoria}
-            onChange={(e) => handleMultiSelect('categoria', e)}
-            className="filter-select"
-          >
-            {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        {/* Producto + Fechas */}
-        <div className="flex flex-col gap-1.5">
-          <div>
-            <label className="block text-xs font-medium text-surface-500 mb-1">Producto</label>
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={filters.producto}
-              onChange={(e) => setFilter('producto', e.target.value)}
-              className="input-base"
+            <CheckboxList
+              label="Mes"
+              options={meses}
+              selected={filters.mes}
+              onChange={(v) => setFilter('mes', v as FilterState['mes'])}
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-surface-500 mb-1">Desde</label>
-            <input
-              type="date"
-              value={filters.fechaDesde}
-              onChange={(e) => setFilter('fechaDesde', e.target.value)}
-              className="input-base"
+
+            <CheckboxList
+              label="Semana"
+              options={semanaOpts}
+              selected={filters.semana.map(String)}
+              onChange={handleSemanaChange}
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-surface-500 mb-1">Hasta</label>
-            <input
-              type="date"
-              value={filters.fechaHasta}
-              onChange={(e) => setFilter('fechaHasta', e.target.value)}
-              className="input-base"
+
+            <CheckboxList
+              label="UDN"
+              options={udns}
+              selected={filters.udn}
+              onChange={(v) => setFilter('udn', v as FilterState['udn'])}
             />
+
+            <CheckboxList
+              label="Área"
+              options={areas}
+              selected={filters.area}
+              onChange={(v) => setFilter('area', v as FilterState['area'])}
+            />
+
+            <CheckboxList
+              label="Categoría"
+              options={categorias}
+              selected={filters.categoria}
+              onChange={(v) => setFilter('categoria', v as FilterState['categoria'])}
+            />
+
+            {/* Producto + Fechas */}
+            <div className="flex flex-col gap-3">
+              <div>
+                <div className="checkbox-list-label"><span>Producto</span></div>
+                <input
+                  type="text"
+                  placeholder="Buscar..."
+                  value={filters.producto}
+                  onChange={(e) => setFilter('producto', e.target.value)}
+                  className="input-base"
+                />
+              </div>
+              <div>
+                <div className="checkbox-list-label"><span>Desde</span></div>
+                <input
+                  type="date"
+                  value={filters.fechaDesde}
+                  onChange={(e) => setFilter('fechaDesde', e.target.value)}
+                  className="input-base"
+                />
+              </div>
+              <div>
+                <div className="checkbox-list-label"><span>Hasta</span></div>
+                <input
+                  type="date"
+                  value={filters.fechaHasta}
+                  onChange={(e) => setFilter('fechaHasta', e.target.value)}
+                  className="input-base"
+                />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
-
-      <p className="text-xs text-surface-400 mt-3">Ctrl/Cmd para seleccionar múltiples valores</p>
     </div>
   )
 }
