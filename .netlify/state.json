@@ -1,0 +1,21 @@
+{
+	"dbConnectionString": "postgres://localhost:62288/postgres",
+	"geolocation": {
+		"data": {
+			"city": "Culiacán",
+			"country": {
+				"code": "MX",
+				"name": "Mexico"
+			},
+			"subdivision": {
+				"code": "SIN",
+				"name": "Sinaloa"
+			},
+			"timezone": "America/Mazatlan",
+			"latitude": 24.548,
+			"longitude": -107.4004,
+			"postalCode": "80140"
+		},
+		"timestamp": 1777992891780
+	}
+}
