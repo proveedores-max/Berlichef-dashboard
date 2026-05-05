@@ -296,6 +296,99 @@
     box-shadow: var(--shadow-card-hover);
     border-color: var(--color-primary-light);
   }
+  .report-card-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+  }
+  .report-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: var(--color-primary-faint, #EFF6FF);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .report-card-header-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+  }
+  .report-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  .report-card-count {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--color-primary-faint, #EFF6FF);
+    color: var(--color-primary);
+  }
+  .report-card-desc {
+    font-size: 12px;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+  }
+  .btn-spinner {
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .pagination-info {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  .pagination-controls {
+    display: flex;
+    gap: 6px;
+  }
+  .report-info-box {
+    display: flex;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--color-primary-faint, #EFF6FF);
+    border: 1px solid var(--color-primary-light);
+    border-radius: var(--radius-lg);
+  }
+  .report-info-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .report-info-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+  }
+  .report-info-list {
+    list-style: disc;
+    padding-left: 16px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
   /* Page header */
   .page-header {

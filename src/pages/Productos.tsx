@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Package, TrendingUp, TrendingDown, Download } from 'lucide-react'
+import { Package, TrendingUp, TrendingDown, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDataStore, useFilteredTransactions } from '@/store/useDataStore'
 import Header from '@/components/layout/Header'
 import { BerliLine } from '@/components/charts/Charts'
@@ -13,6 +13,8 @@ export default function Productos() {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState('')
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [page, setPage] = useState(1)
+  const PAGE_SIZE = 50
 
   useEffect(() => {
     if (!data) fetchData()
@@ -30,17 +32,18 @@ export default function Productos() {
     }
   }, [search, transactions.length])
 
-  // Top 20
-  const top20 = (() => {
+  const allProductRows = (() => {
     const map: Record<string, number> = {}
     transactions.forEach((t) => {
       map[t.producto] = (map[t.producto] ?? 0) + t.total
     })
     return Object.entries(map)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 20)
       .map(([producto, total]) => ({ producto, total }))
   })()
+
+  const totalPages = Math.max(1, Math.ceil(allProductRows.length / PAGE_SIZE))
+  const pagedRows = allProductRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   // Product history
   const history: Transaction[] = selected
@@ -197,11 +200,14 @@ export default function Productos() {
         </div>
       )}
 
-      {/* Top 20 */}
+      {/* All products with pagination */}
       {!selected && (
         <div className="card overflow-hidden">
-          <div className="p-5 border-b border-surface-100">
-            <p className="text-sm font-semibold text-surface-700">Top 20 productos por costo total</p>
+          <div className="p-5 border-b border-surface-100 flex items-center justify-between">
+            <p className="text-sm font-semibold text-surface-700">
+              Todos los productos por costo total
+              <span className="ml-2 text-surface-400 font-normal">({allProductRows.length} productos)</span>
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="table-base">
@@ -214,9 +220,9 @@ export default function Productos() {
                 </tr>
               </thead>
               <tbody>
-                {top20.map((p, i) => (
+                {pagedRows.map((p, i) => (
                   <tr key={p.producto}>
-                    <td className="text-surface-400 font-mono text-xs">{i + 1}</td>
+                    <td className="text-surface-400 font-mono text-xs">{(page - 1) * PAGE_SIZE + i + 1}</td>
                     <td className="font-medium">{p.producto}</td>
                     <td className="text-right mono">{fmtMXN(p.total)}</td>
                     <td>
@@ -232,6 +238,31 @@ export default function Productos() {
               </tbody>
             </table>
           </div>
+          {totalPages > 1 && (
+            <div className="table-pagination">
+              <span className="pagination-info">
+                Página {page} de {totalPages} · {allProductRows.length} productos
+              </span>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px' }}
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="btn-secondary"
+                  style={{ padding: '4px 10px' }}
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

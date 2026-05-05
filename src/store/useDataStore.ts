@@ -5,6 +5,7 @@ import type {
   Transaction,
   Financial,
   Sale,
+  EstadoCuenta,
   KPIs,
   UDNSummary,
   CategoryCost,
@@ -110,19 +111,37 @@ export function useFilteredSales(): Sale[] {
   })
 }
 
+export function useFilteredEstadoCuenta(): EstadoCuenta[] {
+  const { data, filters } = useDataStore()
+  if (!data || !data.estadoCuenta) return []
+  return data.estadoCuenta.filter((e) => {
+    if (filters.mes.length > 0 && !filters.mes.includes(e.mes)) return false
+    if (filters.udn.length > 0 && !filters.udn.includes(e.udn)) return false
+    return true
+  })
+}
+
 export function computeKPIs(
   transactions: Transaction[],
   financials: Financial[],
-  sales: Sale[]
+  sales: Sale[],
+  estadoCuenta?: EstadoCuenta[]
 ): KPIs {
-  const ventasNetas = sales.reduce((a, s) => a + s.ventasNetas, 0)
   const costoVenta = transactions.reduce((a, t) => a + t.total, 0)
-  const manoDeObra = financials
-    .filter((f) => f.clasificacion === 'Nomina')
-    .reduce((a, f) => a + f.total, 0)
-  const gastosOperativos = financials
-    .filter((f) => f.clasificacion === 'Gasto operativo')
-    .reduce((a, f) => a + f.total, 0)
+
+  let ventasNetas: number
+  let manoDeObra: number
+  let gastosOperativos: number
+
+  if (estadoCuenta && estadoCuenta.length > 0) {
+    ventasNetas      = estadoCuenta.reduce((a, e) => a + e.ventasNetas,      0)
+    manoDeObra       = estadoCuenta.reduce((a, e) => a + e.manoDeObra,       0)
+    gastosOperativos = estadoCuenta.reduce((a, e) => a + e.gastosOperativos, 0)
+  } else {
+    ventasNetas      = sales.reduce((a, s) => a + s.ventasNetas, 0)
+    manoDeObra       = financials.filter((f) => f.clasificacion === 'Nomina').reduce((a, f) => a + f.total, 0)
+    gastosOperativos = financials.filter((f) => f.clasificacion === 'Gasto operativo').reduce((a, f) => a + f.total, 0)
+  }
   const utilidadBruta = ventasNetas - costoVenta
   const ebitda = utilidadBruta - manoDeObra - gastosOperativos
 
@@ -147,13 +166,15 @@ export function computeKPIs(
 export function computeUDNSummaries(
   transactions: Transaction[],
   financials: Financial[],
-  sales: Sale[]
+  sales: Sale[],
+  estadoCuenta?: EstadoCuenta[]
 ): UDNSummary[] {
   const udns = Array.from(
     new Set([
       ...transactions.map((t) => t.udn),
       ...financials.map((f) => f.udn),
       ...sales.map((s) => s.udn),
+      ...(estadoCuenta ?? []).map((e) => e.udn),
     ])
   ).filter(Boolean)
 
@@ -161,7 +182,8 @@ export function computeUDNSummaries(
     const t = transactions.filter((x) => x.udn === udn)
     const f = financials.filter((x) => x.udn === udn)
     const s = sales.filter((x) => x.udn === udn)
-    return { udn, ...computeKPIs(t, f, s) }
+    const e = estadoCuenta?.filter((x) => x.udn === udn)
+    return { udn, ...computeKPIs(t, f, s, e) }
   })
 }
 

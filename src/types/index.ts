@@ -80,10 +80,21 @@ export type FilterState = {
   fechaHasta: string
 }
 
+export interface EstadoCuenta {
+  mes:              string
+  udn:              string
+  ventasNetas:      number
+  costoVenta:       number
+  manoDeObra:       number
+  gastosOperativos: number
+  ebitda:           number
+}
+
 export type SheetData = {
-  transactions: Transaction[]
-  financials: Financial[]
-  sales: Sale[]
-  products: Product[]
-  lastUpdated: string
+  transactions:  Transaction[]
+  financials:    Financial[]
+  sales:         Sale[]
+  products:      Product[]
+  estadoCuenta:  EstadoCuenta[]
+  lastUpdated:   string
 }

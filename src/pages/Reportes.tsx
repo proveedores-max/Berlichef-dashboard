@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Download } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Download, Loader2, Info } from 'lucide-react'
 import {
   useDataStore,
   useFilteredTransactions,
@@ -30,18 +30,32 @@ interface ReportCardProps {
 }
 
 function ReportCard({ icon, title, description, count, onExport, disabled }: ReportCardProps) {
+  const [loading, setLoading] = useState(false)
+
+  const handleExport = async () => {
+    setLoading(true)
+    try {
+      await Promise.resolve(onExport())
+    } finally {
+      setTimeout(() => setLoading(false), 800)
+    }
+  }
+
   return (
     <div className="report-card">
-      <div className="report-card-info" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <span style={{ fontSize: 28, lineHeight: 1 }}>{icon}</span>
+      <div className="report-card-left">
+        <div className="report-card-icon">{icon}</div>
         <div>
-          <h3>{title}</h3>
-          <p>{description} · {fmtNum(count)} registros</p>
+          <div className="report-card-header-row">
+            <span className="report-card-title">{title}</span>
+            <span className="report-card-count">{fmtNum(count)}</span>
+          </div>
+          <p className="report-card-desc">{description}</p>
         </div>
       </div>
-      <button onClick={onExport} disabled={disabled} className="btn-excel" style={{ flexShrink: 0 }}>
-        <Download size={13} />
-        Excel
+      <button onClick={handleExport} disabled={disabled || loading} className="btn-excel" style={{ flexShrink: 0 }}>
+        {loading ? <Loader2 size={13} className="btn-spinner" /> : <Download size={13} />}
+        {loading ? 'Exportando…' : 'Excel'}
       </button>
     </div>
   )
@@ -109,24 +123,23 @@ export default function Reportes() {
       <Header title="Reportes" subtitle="Exporta datos a Excel con los filtros aplicados" />
       <FilterPanel />
 
-      <div className="mb-4">
-        <p className="text-xs text-surface-400">Todos los reportes respetan los filtros activos</p>
-      </div>
-
       <div className="grid xl:grid-cols-2 gap-4 mb-6">
         {reports.map((r) => (
           <ReportCard key={r.title} {...r} />
         ))}
       </div>
 
-      <div className="card p-5">
-        <p className="text-sm font-semibold text-surface-700 mb-3">¿Cómo usar los filtros con reportes?</p>
-        <ul className="text-sm text-surface-500 space-y-1.5">
-          <li>• Aplica los filtros deseados en el panel superior (mes, UDN, categoría, etc.)</li>
-          <li>• Los reportes exportan únicamente los datos que coinciden con los filtros activos</li>
-          <li>• Para exportar todos los datos, haz clic en <strong>Limpiar</strong> en el panel de filtros</li>
-          <li>• Usa los checkboxes en el panel de filtros para seleccionar múltiples valores</li>
-        </ul>
+      <div className="report-info-box">
+        <div className="report-info-icon"><Info size={16} /></div>
+        <div>
+          <p className="report-info-title">¿Cómo usar los filtros con reportes?</p>
+          <ul className="report-info-list">
+            <li>Aplica los filtros deseados en el panel superior (mes, UDN, categoría, etc.)</li>
+            <li>Los reportes exportan únicamente los datos que coinciden con los filtros activos</li>
+            <li>Para exportar todos los datos, haz clic en <strong>Limpiar</strong> en el panel de filtros</li>
+            <li>Usa los checkboxes en el panel de filtros para seleccionar múltiples valores</li>
+          </ul>
+        </div>
       </div>
     </div>
   )

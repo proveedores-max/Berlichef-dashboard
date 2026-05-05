@@ -108,7 +108,7 @@ export default function ABCAnalysis() {
                 <th>Categoría</th>
                 <th className="text-right">Costo Total</th>
                 <th className="text-right">% Individual</th>
-                <th>% Acumulado</th>
+                <th className="text-right">% Acumulado</th>
                 <th>Clase</th>
               </tr>
             </thead>

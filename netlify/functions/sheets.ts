@@ -40,6 +40,16 @@ interface Product {
   categoria: string
 }
 
+interface EstadoCuenta {
+  mes:              string
+  udn:              string
+  ventasNetas:      number
+  costoVenta:       number
+  manoDeObra:       number
+  gastosOperativos: number
+  ebitda:           number
+}
+
 function parseMoney(val: string | undefined): number {
   if (!val) return 0
   return parseFloat(String(val).replace(/[$,\s]/g, '')) || 0
@@ -101,6 +111,28 @@ function parseProducts(rows: string[][]): Product[] {
   }))
 }
 
+function parseEstadoCuenta(rows: string[][]): EstadoCuenta[] {
+  if (rows.length < 2) return []
+  const header = rows[0].map((h) => h?.trim().toLowerCase() ?? '')
+  const idx = (names: string[]) => names.reduce((found, n) => found !== -1 ? found : header.indexOf(n), -1)
+  const iMes   = idx(['mes'])
+  const iUdn   = idx(['udn', 'unidad'])
+  const iVentas = idx(['ventas netas', 'ventas', 'ventasnetas'])
+  const iCdv   = idx(['costo de venta', 'costo venta', 'costoventa'])
+  const iMdo   = idx(['mano de obra', 'nómina', 'nomina', 'mano obra'])
+  const iGastos = idx(['gastos operativos', 'gastos op', 'gastos'])
+  const iEbitda = idx(['ebitda'])
+  return rows.slice(1).filter((r) => r.length > 0 && r[0]).map((r) => ({
+    mes:              iMes    !== -1 ? (r[iMes]   ?? '') : '',
+    udn:              iUdn    !== -1 ? (r[iUdn]   ?? '') : '',
+    ventasNetas:      iVentas !== -1 ? parseMoney(r[iVentas])  : 0,
+    costoVenta:       iCdv    !== -1 ? parseMoney(r[iCdv])     : 0,
+    manoDeObra:       iMdo    !== -1 ? parseMoney(r[iMdo])     : 0,
+    gastosOperativos: iGastos !== -1 ? parseMoney(r[iGastos])  : 0,
+    ebitda:           iEbitda !== -1 ? parseMoney(r[iEbitda])  : 0,
+  }))
+}
+
 export const handler: Handler = async () => {
   const headers = {
     'Content-Type': 'application/json',
@@ -113,22 +145,24 @@ export const handler: Handler = async () => {
       throw new Error('GOOGLE_API_KEY no configurada')
     }
 
-    const [costoRows, gastosRows, ventasRows, productosRows] = await Promise.all([
+    const [costoRows, gastosRows, ventasRows, productosRows, estadoRows] = await Promise.all([
       fetchSheet('Costo de Venta!A:K'),
       fetchSheet('Gastos Operativos!A:G'),
       fetchSheet('Ventas!A:D'),
       fetchSheet('BDD Precios!A:C'),
+      fetchSheet('Estado de Cuenta!A:Z').catch(() => [] as string[][]),
     ])
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
-        transactions: parseTransactions(costoRows),
-        financials: parseFinancials(gastosRows),
-        sales: parseSales(ventasRows),
-        products: parseProducts(productosRows),
-        lastUpdated: new Date().toISOString(),
+        transactions:  parseTransactions(costoRows),
+        financials:    parseFinancials(gastosRows),
+        sales:         parseSales(ventasRows),
+        products:      parseProducts(productosRows),
+        estadoCuenta:  parseEstadoCuenta(estadoRows),
+        lastUpdated:   new Date().toISOString(),
       }),
     }
   } catch (err) {

@@ -1,51 +1,59 @@
 import { useEffect, useState } from 'react'
+import { GAUGE_COLORS } from '@/utils/gaugeColors'
+import type { GaugeThresholds } from '@/config/gaugeConfig'
 
-interface Thresholds {
-  green: [number, number]
-  yellow: [number, number]
-  red: [number, number]
-}
+// SVG geometry
+const CX  = 100
+const CY  = 110
+const R   = 75
+const SW  = 14
+const ARC_LEN = Math.PI * R            // ≈ 235.6
+const ARC_D   = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`
 
 interface GaugeKPIProps {
-  label: string
-  value: number
-  min?: number
-  max?: number
-  thresholds: Thresholds
-  invertColors?: boolean
-  unit?: string
-  tooltip?: string
-  benchmark?: number
+  label:          string
+  value:          number
+  min?:           number
+  max?:           number
+  thresholds:     GaugeThresholds
+  invertColors?:  boolean
+  benchmarkLabel: string
+  tooltip?:       string
 }
 
-const CX = 100
-const CY = 105
-const R = 80
-const SW = 16
-const ARC_LEN = Math.PI * R // ≈ 251.33
-const ARC_D = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`
-
-function getColor(value: number, thresholds: Thresholds, invertColors: boolean): string {
-  if (!invertColors) {
-    if (value >= thresholds.green[0]) return 'var(--gauge-good)'
-    if (value >= thresholds.yellow[0]) return 'var(--gauge-warning)'
-    return 'var(--gauge-danger)'
+function getColor(value: number, t: GaugeThresholds, inv: boolean): string {
+  if (!inv) {
+    if (value >= t.good)    return GAUGE_COLORS.green
+    if (value >= t.warning) return GAUGE_COLORS.yellow
+    return GAUGE_COLORS.red
   } else {
-    if (value <= thresholds.green[1]) return 'var(--gauge-good)'
-    if (value <= thresholds.yellow[1]) return 'var(--gauge-warning)'
-    return 'var(--gauge-danger)'
+    if (value <= t.warning) return GAUGE_COLORS.green
+    if (value <= t.danger)  return GAUGE_COLORS.yellow
+    return GAUGE_COLORS.red
   }
 }
 
-interface ZoneSegmentProps {
-  startFrac: number
-  endFrac: number
-  color: string
+interface Segment { startFrac: number; endFrac: number; color: string }
+
+function buildZones(t: GaugeThresholds, inv: boolean, max: number): Segment[] {
+  if (!inv) {
+    return [
+      { startFrac: 0,                endFrac: t.warning / max, color: GAUGE_COLORS.red    },
+      { startFrac: t.warning / max,  endFrac: t.good / max,    color: GAUGE_COLORS.yellow },
+      { startFrac: t.good / max,     endFrac: 1,               color: GAUGE_COLORS.green  },
+    ]
+  } else {
+    return [
+      { startFrac: 0,               endFrac: t.warning / max, color: GAUGE_COLORS.green  },
+      { startFrac: t.warning / max, endFrac: t.danger / max,  color: GAUGE_COLORS.yellow },
+      { startFrac: t.danger / max,  endFrac: 1,               color: GAUGE_COLORS.red    },
+    ]
+  }
 }
 
-function ZoneSegment({ startFrac, endFrac, color }: ZoneSegmentProps) {
-  const startLen = startFrac * ARC_LEN
-  const segLen = (endFrac - startFrac) * ARC_LEN
+function ZoneArc({ startFrac, endFrac, color }: Segment) {
+  const segLen  = (endFrac - startFrac) * ARC_LEN
+  const startAt = startFrac * ARC_LEN
   if (segLen <= 0) return null
   return (
     <path
@@ -55,8 +63,8 @@ function ZoneSegment({ startFrac, endFrac, color }: ZoneSegmentProps) {
       strokeWidth={SW}
       strokeLinecap="butt"
       strokeDasharray={`${segLen} ${ARC_LEN * 2}`}
-      strokeDashoffset={-startLen}
-      opacity={0.22}
+      strokeDashoffset={-startAt}
+      opacity={0.28}
     />
   )
 }
@@ -68,41 +76,28 @@ export default function GaugeKPI({
   max = 100,
   thresholds,
   invertColors = false,
-  unit = '%',
+  benchmarkLabel,
   tooltip,
-  benchmark,
 }: GaugeKPIProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => { setMounted(true) }, [])
 
-  const clamped = Math.max(min, Math.min(max, isNaN(value) ? 0 : value))
+  const clamped  = Math.max(min, Math.min(max, isNaN(value) ? 0 : value))
   const fraction = (clamped - min) / (max - min)
-  const color = getColor(clamped, thresholds, invertColors)
+  const color    = getColor(clamped, thresholds, invertColors)
+  const zones    = buildZones(thresholds, invertColors, max)
 
-  // Dashoffset animation: ARC_LEN = empty, 0 = full
+  // Value arc animation
   const dashOffset = mounted ? ARC_LEN * (1 - fraction) : ARC_LEN
 
-  // Zone segments (background hints)
-  const zones: ZoneSegmentProps[] = !invertColors
-    ? [
-        { startFrac: 0,                              endFrac: thresholds.red[1] / max,    color: 'var(--gauge-danger)'  },
-        { startFrac: thresholds.red[1] / max,        endFrac: thresholds.yellow[1] / max, color: 'var(--gauge-warning)' },
-        { startFrac: thresholds.yellow[1] / max,     endFrac: 1,                          color: 'var(--gauge-good)'    },
-      ]
-    : [
-        { startFrac: 0,                              endFrac: thresholds.green[1] / max,  color: 'var(--gauge-good)'    },
-        { startFrac: thresholds.green[1] / max,      endFrac: thresholds.yellow[1] / max, color: 'var(--gauge-warning)' },
-        { startFrac: thresholds.yellow[1] / max,     endFrac: 1,                          color: 'var(--gauge-danger)'  },
-      ]
+  // Needle: -90° = far left, +90° = far right
+  const needleAngle = fraction * 180 - 90
 
   // Delta vs benchmark
-  const delta = benchmark !== undefined ? clamped - benchmark : undefined
-  const deltaGood = delta !== undefined
-    ? (!invertColors ? delta >= 0 : delta <= 0)
-    : false
-  const deltaColor = deltaGood ? 'var(--color-success)' : 'var(--color-danger)'
-  const deltaSymbol = deltaGood ? '▲' : '▼'
-  const deltaLabel = deltaGood ? 'sobre objetivo' : 'bajo objetivo'
+  const benchmarkNum = invertColors ? thresholds.warning : thresholds.good
+  const delta        = invertColors ? benchmarkNum - clamped : clamped - benchmarkNum
+  const deltaGood    = delta >= 0
+  const noData       = !isNaN(value) && value === 0
 
   return (
     <div
@@ -111,7 +106,7 @@ export default function GaugeKPI({
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         borderRadius: 'var(--radius-lg)',
-        padding: '20px 16px 14px',
+        padding: '16px 12px 10px',
         boxShadow: 'var(--shadow-card)',
         transition: 'box-shadow 0.2s ease',
         display: 'flex',
@@ -121,46 +116,32 @@ export default function GaugeKPI({
       }}
       title={tooltip}
     >
-      {/* Tooltip icon */}
+      {/* Tooltip hint */}
       {tooltip && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 10,
-            right: 12,
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            border: '1px solid var(--color-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 10,
-            color: 'var(--color-text-muted)',
-            cursor: 'help',
-            fontWeight: 600,
-          }}
-        >
-          ?
-        </div>
+        <div style={{
+          position: 'absolute', top: 8, right: 10,
+          width: 15, height: 15, borderRadius: '50%',
+          border: '1px solid var(--color-border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 9, color: 'var(--color-text-muted)',
+          cursor: 'help', fontWeight: 700,
+        }}>?</div>
       )}
 
-      <svg viewBox="0 0 200 120" style={{ width: '100%', maxWidth: 200, display: 'block' }}>
-        {/* Gray track */}
+      <svg viewBox="0 0 200 125" style={{ width: '100%', maxWidth: 200, display: 'block', overflow: 'visible' }}>
+        {/* 1. Gray base track */}
         <path
           d={ARC_D}
           fill="none"
-          stroke="var(--gauge-track)"
+          stroke={GAUGE_COLORS.track}
           strokeWidth={SW}
-          strokeLinecap="round"
+          strokeLinecap="butt"
         />
 
-        {/* Zone background hints */}
-        {zones.map((z, i) => (
-          <ZoneSegment key={i} {...z} />
-        ))}
+        {/* 2. Multicolor zone segments */}
+        {zones.map((z, i) => <ZoneArc key={i} {...z} />)}
 
-        {/* Value arc */}
+        {/* 3. Active value arc */}
         <path
           d={ARC_D}
           fill="none"
@@ -169,63 +150,90 @@ export default function GaugeKPI({
           strokeLinecap="round"
           strokeDasharray={`${ARC_LEN} ${ARC_LEN}`}
           strokeDashoffset={dashOffset}
-          style={{
-            transition: 'stroke-dashoffset 0.85s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
+          style={{ transition: 'stroke-dashoffset 0.9s cubic-bezier(0.4, 0, 0.2, 1)' }}
         />
 
-        {/* Value text */}
-        <text
-          x={CX}
-          y={92}
-          textAnchor="middle"
-          fontFamily="Syne, sans-serif"
-          fontSize={26}
-          fontWeight={700}
-          fill={color}
-          style={{ fontVariantNumeric: 'tabular-nums' }}
-        >
-          {clamped.toFixed(1)}{unit}
+        {/* 4. Needle group — rotates from left (-90°) to value angle */}
+        <g style={{
+          transformOrigin: `${CX}px ${CY}px`,
+          transform: `rotate(${mounted ? needleAngle : -90}deg)`,
+          transition: mounted ? 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)' : 'none',
+        }}>
+          {/* Needle body (pointing up toward arc) */}
+          <line
+            x1={CX} y1={CY}
+            x2={CX} y2={CY - R + 6}
+            stroke={GAUGE_COLORS.needle}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+          />
+          {/* Counterweight (pointing down) */}
+          <line
+            x1={CX} y1={CY}
+            x2={CX} y2={CY + 10}
+            stroke={GAUGE_COLORS.needle}
+            strokeWidth={4}
+            strokeLinecap="round"
+          />
+          {/* Center hub outer */}
+          <circle cx={CX} cy={CY} r={7}  fill={GAUGE_COLORS.needle} />
+          {/* Center hub inner */}
+          <circle cx={CX} cy={CY} r={4}  fill={GAUGE_COLORS.needleCenter} />
+        </g>
+
+        {/* 5. Range labels at arc ends */}
+        <text x={CX - R + 2} y={CY + 14} fontSize={8.5} fill="#94A3B8" textAnchor="middle"
+          fontFamily="'DM Sans', sans-serif">
+          {min}%
+        </text>
+        <text x={CX + R - 2} y={CY + 14} fontSize={8.5} fill="#94A3B8" textAnchor="middle"
+          fontFamily="'DM Sans', sans-serif">
+          {max}%
         </text>
 
-        {/* Label */}
+        {/* 6. Value (large) */}
         <text
-          x={CX}
-          y={113}
+          x={CX} y={noData ? 88 : 84}
           textAnchor="middle"
-          fontFamily="DM Sans, sans-serif"
-          fontSize={9.5}
-          fontWeight={600}
-          fill="var(--color-text-muted)"
-          style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}
+          fontFamily="'DM Sans', sans-serif"
+          fontSize={noData ? 12 : 24}
+          fontWeight={700}
+          fill={noData ? '#94A3B8' : color}
+          letterSpacing="-0.5"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
         >
+          {noData ? 'Sin datos' : `${clamped.toFixed(1)}%`}
+        </text>
+
+        {/* 7. Label */}
+        <text x={CX} y={97} textAnchor="middle"
+          fontFamily="'DM Sans', sans-serif" fontSize={8} fontWeight={600}
+          fill="#64748B" letterSpacing="1">
           {label}
+        </text>
+
+        {/* 8. Benchmark reference */}
+        <text x={CX} y={108} textAnchor="middle"
+          fontFamily="'DM Sans', sans-serif" fontSize={7.5} fontWeight={400}
+          fill="#94A3B8">
+          Ref: {benchmarkLabel}
         </text>
       </svg>
 
-      {/* Delta badge */}
-      {delta !== undefined && (
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 11,
-            fontWeight: 500,
-            color: deltaColor,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-          }}
-        >
-          <span>{deltaSymbol}</span>
-          <span>{Math.abs(delta).toFixed(1)}pp {deltaLabel}</span>
+      {/* Delta badge below gauge */}
+      {!noData && (
+        <div style={{
+          marginTop: 2,
+          fontSize: 11,
+          fontWeight: 500,
+          color: deltaGood ? GAUGE_COLORS.green : GAUGE_COLORS.red,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 3,
+        }}>
+          <span>{deltaGood ? '▲' : '▼'}</span>
+          <span>{Math.abs(delta).toFixed(1)}pp {deltaGood ? 'sobre' : 'bajo'} objetivo</span>
         </div>
-      )}
-
-      {/* No data state */}
-      {isNaN(value) || value === 0 && benchmark === undefined && (
-        <p style={{ fontSize: 10, color: 'var(--color-text-muted)', marginTop: 2 }}>
-          Sin ventas capturadas
-        </p>
       )}
     </div>
   )
