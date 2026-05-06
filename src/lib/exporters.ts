@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
-import type { Transaction, ABCItem, UDNSummary, Financial } from '@/types'
+import type { Transaction, ABCItem, UDNSummary, Financial, KPIs } from '@/types'
+import { getUDNColor } from '@/config/udnColors'
 import { numFmt, EXCEL_COLORS } from '@/utils/excelStyles'
 import {
   setWorkbookProps,
@@ -282,6 +283,124 @@ function buildFinancialsWS(wb: ExcelJS.Workbook, rows: Financial[], filters = ''
   addDataRow(ws, ['', '', '', '', 'TOTAL', grandTotal, ''], cols, rowIdx, true)
 }
 
+// ── Estado de Resultados — UDN worksheet (full Spanish columns + UDN colors) ─
+
+function buildEstadoResultadosUDNWS(wb: ExcelJS.Workbook, rows: UDNSummary[], filters = '') {
+  const ws = wb.addWorksheet('Por Unidad de Negocio')
+  setSheetProps(ws)
+
+  const cols: ColConfig[] = [
+    { header: 'Unidad de Negocio',  key: 'udn',                width: 24 },
+    { header: 'Ventas Netas',       key: 'ventasNetas',        width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: 'Costo de Venta',     key: 'costoVenta',         width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: 'Utilidad Bruta',     key: 'utilidadBruta',      width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: '% Utilidad Bruta',   key: 'utilidadBrutaPct',   width: 17, numFmt: numFmt.percent,  align: 'right' },
+    { header: 'Mano de Obra',       key: 'manoDeObra',         width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: 'Gastos Operativos',  key: 'gastosOperativos',   width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: 'EBITDA',             key: 'ebitda',             width: 17, numFmt: numFmt.currency, align: 'right' },
+    { header: 'EBITDA %',           key: 'ebitdaPct',          width: 17, numFmt: numFmt.percent,  align: 'right' },
+  ]
+
+  buildExcelHeader(ws, 'Estado de Resultados — Desglose por Unidad', filters, cols.length)
+  applyColumnConfig(ws, cols)
+
+  rows.forEach((r, i) => {
+    const row = addDataRow(ws, [
+      r.udn, r.ventasNetas, r.costoVenta, r.utilidadBruta,
+      r.utilidadBrutaPct, r.manoDeObra, r.gastosOperativos,
+      r.ebitda, r.ebitdaPct,
+    ], cols, i)
+
+    // Thick left border with UDN palette color
+    const udnHex = getUDNColor(r.udn).replace('#', '')
+    const firstCell = row.getCell(1)
+    firstCell.border = {
+      ...firstCell.border,
+      left: { style: 'thick', color: { argb: `FF${udnHex}` } },
+    }
+
+    // EBITDA cell (col 8)
+    const eCell = row.getCell(8)
+    eCell.font   = { ...eCell.font, color: { argb: r.ebitda >= 0 ? 'FF059669' : 'FFDC2626' } }
+    eCell.numFmt = numFmt.currency
+
+    // EBITDA % cell (col 9)
+    const ePctCell = row.getCell(9)
+    ePctCell.font   = { ...ePctCell.font, color: { argb: r.ebitdaPct >= 0 ? 'FF059669' : 'FFDC2626' } }
+    ePctCell.numFmt = numFmt.percent
+  })
+
+  // Aggregate totals
+  const totalVentas  = rows.reduce((s, r) => s + r.ventasNetas, 0)
+  const totalCosto   = rows.reduce((s, r) => s + r.costoVenta, 0)
+  const totalUB      = rows.reduce((s, r) => s + r.utilidadBruta, 0)
+  const totalMO      = rows.reduce((s, r) => s + r.manoDeObra, 0)
+  const totalGastos  = rows.reduce((s, r) => s + r.gastosOperativos, 0)
+  const totalEBITDA  = rows.reduce((s, r) => s + r.ebitda, 0)
+  const avgUBPct     = totalVentas > 0 ? (totalUB / totalVentas) * 100 : 0
+  const avgEBITDAPct = totalVentas > 0 ? (totalEBITDA / totalVentas) * 100 : 0
+
+  const totalRow = addDataRow(ws, [
+    'Total Consolidado', totalVentas, totalCosto, totalUB,
+    avgUBPct, totalMO, totalGastos, totalEBITDA, avgEBITDAPct,
+  ], cols, rows.length, true)
+
+  // Override EBITDA colors on dark total row (bright variants readable on #0F172A)
+  const teCell = totalRow.getCell(8)
+  teCell.font   = { ...teCell.font, color: { argb: totalEBITDA >= 0 ? 'FF34D399' : 'FFF87171' } }
+  teCell.numFmt = numFmt.currency
+
+  const tePctCell = totalRow.getCell(9)
+  tePctCell.font   = { ...tePctCell.font, color: { argb: avgEBITDAPct >= 0 ? 'FF34D399' : 'FFF87171' } }
+  tePctCell.numFmt = numFmt.percent
+}
+
+// ── Estado de Resultados — P&L consolidado worksheet ─────────────────────────
+
+function buildPLWS(wb: ExcelJS.Workbook, kpis: KPIs, filters = '') {
+  const ws = wb.addWorksheet('Estado de Resultados')
+  setSheetProps(ws)
+
+  const cols: ColConfig[] = [
+    { header: 'Concepto',  key: 'concepto', width: 28 },
+    { header: 'Importe',   key: 'importe',  width: 22, numFmt: numFmt.currency, align: 'right' },
+    { header: '% Ventas',  key: 'pct',      width: 16, numFmt: numFmt.percent,  align: 'right' },
+  ]
+
+  buildExcelHeader(ws, 'Estado de Resultados — P&L Consolidado', filters, cols.length)
+  applyColumnConfig(ws, cols)
+
+  type PLExcelRow = { concepto: string; importe: number; pct: number; fill: string; bold: boolean }
+  const plData: PLExcelRow[] = [
+    { concepto: 'Ventas Netas',      importe: kpis.ventasNetas,      pct: 100,                       fill: 'FFEFF6FF', bold: false },
+    { concepto: 'Costo de Venta',    importe: kpis.costoVenta,       pct: kpis.foodCostPct,          fill: 'FFFFF5F5', bold: false },
+    { concepto: 'Utilidad Bruta',    importe: kpis.utilidadBruta,    pct: kpis.utilidadBrutaPct,     fill: 'FFF0FDF4', bold: true  },
+    { concepto: 'Mano de Obra',      importe: kpis.manoDeObra,       pct: kpis.manoDeObraPct,        fill: 'FFFFFBEB', bold: false },
+    { concepto: 'Gastos Operativos', importe: kpis.gastosOperativos, pct: kpis.gastosOperativosPct,  fill: 'FFF5F3FF', bold: false },
+    {
+      concepto: 'EBITDA',
+      importe: kpis.ebitda,
+      pct: kpis.ebitdaPct,
+      fill: kpis.ebitda >= 0 ? 'FFF0FDF4' : 'FFFFF5F5',
+      bold: true,
+    },
+  ]
+
+  plData.forEach((row) => {
+    const wsRow = ws.addRow([row.concepto, row.importe, row.pct])
+    wsRow.height = 20
+    const fillStyle: ExcelJS.Fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: row.fill } }
+    cols.forEach((col, ci) => {
+      const cell = wsRow.getCell(ci + 1)
+      cell.fill      = fillStyle
+      cell.font      = { name: 'Calibri', bold: row.bold, size: row.bold ? 11 : 10, color: { argb: 'FF0F172A' } }
+      cell.alignment = { horizontal: col.align ?? 'left', vertical: 'middle' }
+      cell.border    = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } } }
+      if (col.numFmt) cell.numFmt = col.numFmt
+    })
+  })
+}
+
 // ── Public single-export functions ───────────────────────────────────────────
 
 export async function exportTransactions(rows: Transaction[], filters = '', filename?: string) {
@@ -310,6 +429,14 @@ export async function exportUDNSummary(rows: UDNSummary[], filters = '', filenam
   setWorkbookProps(wb)
   buildUDNWS(wb, rows, filters)
   await saveWorkbook(wb, filename ?? `berlichef_udns_${todayStr()}.xlsx`)
+}
+
+export async function exportEstadoResultados(rows: UDNSummary[], kpis: KPIs, filters = '', filename?: string) {
+  const wb = new ExcelJS.Workbook()
+  setWorkbookProps(wb)
+  buildEstadoResultadosUDNWS(wb, rows, filters)
+  buildPLWS(wb, kpis, filters)
+  await saveWorkbook(wb, filename ?? `berlichef_estado_resultados_${todayStr()}.xlsx`)
 }
 
 export async function exportFinancials(rows: Financial[], filters = '', filename?: string) {
