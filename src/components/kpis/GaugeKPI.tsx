@@ -1,198 +1,257 @@
 import { useEffect, useState } from 'react'
-import { getGaugeColor } from '@/utils/gaugeColors'
-import type { GaugeThresholds } from '@/config/gaugeConfig'
+import { GAUGE_COLORS } from '@/utils/gaugeColors'
 
+/* ─── Gauge geometry ─── */
 const CX = 100
-const CY = 95
-const R  = 72
+const CY = 100
+const R  = 75
 
-interface GaugeKPIProps {
-  label:          string
-  value:          number
-  min?:           number
-  max?:           number
-  thresholds:     GaugeThresholds
-  invertColors?:  boolean
-  benchmarkLabel: string
-  tooltip?:       string
-}
-
-// Convert a pct (0–1) position along the semicircle to SVG coordinates.
-// alpha=π → left end (pct=0), alpha=0 → right end (pct=1)
+/** Maps a 0–1 fraction along the semicircle to SVG [x, y].
+ *  pct=0 → left end (min), pct=0.5 → top (mid), pct=1 → right end (max)
+ */
 function arcPoint(pct: number): [number, number] {
   const alpha = Math.PI * (1 - pct)
   return [CX + R * Math.cos(alpha), CY - R * Math.sin(alpha)]
 }
 
-interface ZoneDef { from: number; to: number; color: string }
-
-function buildZones(thresholds: GaugeThresholds, invertColors: boolean, min: number, max: number): ZoneDef[] {
-  if (!invertColors) {
-    return [
-      { from: min,                  to: thresholds.warning!,  color: '#FF4757' },
-      { from: thresholds.warning!,  to: thresholds.good!,     color: '#FFB800' },
-      { from: thresholds.good!,     to: max,                  color: '#00C48C' },
-    ]
-  } else {
-    return [
-      { from: min,                  to: thresholds.warning,   color: '#00C48C' },
-      { from: thresholds.warning,   to: thresholds.danger!,   color: '#FFB800' },
-      { from: thresholds.danger!,   to: max,                  color: '#FF4757' },
-    ]
-  }
+/* ─── Props ─── */
+interface GaugeKPIProps {
+  label:          string
+  value:          number
+  min:            number
+  max:            number
+  /** Lower boundary: separates zone 1 from zone 2 */
+  t1:             number
+  /** Upper boundary: separates zone 2 from zone 3 */
+  t2:             number
+  /** true = lower is better  → zone order: green / yellow / red (left → right)
+   *  false = higher is better → zone order: red / yellow / green */
+  invertColors:   boolean
+  benchmarkLabel: string
+  tooltip?:       string
 }
 
-function TrackZones({ thresholds, invertColors, min, max }: {
-  thresholds: GaugeThresholds; invertColors: boolean; min: number; max: number
-}) {
-  const total = max - min
-  const zones = buildZones(thresholds, invertColors, min, max)
+/* ─── Zone arc ─── */
+function ZoneArc({ pct0, pct1, color }: { pct0: number; pct1: number; color: string }) {
+  const p0 = Math.max(0.0001, Math.min(0.9999, pct0))
+  const p1 = Math.max(0.0001, Math.min(0.9999, pct1))
+  if (p1 <= p0) return null
+  const [x1, y1] = arcPoint(p0)
+  const [x2, y2] = arcPoint(p1)
   return (
-    <>
-      {zones.map((z, i) => {
-        const pctStart = (z.from - min) / total
-        const pctEnd   = (z.to   - min) / total
-        if (pctEnd <= pctStart) return null
-        const [x1, y1] = arcPoint(pctStart)
-        const [x2, y2] = arcPoint(pctEnd)
-        return (
-          <path
-            key={i}
-            d={`M ${x1.toFixed(2)},${y1.toFixed(2)} A ${R},${R} 0 0,1 ${x2.toFixed(2)},${y2.toFixed(2)}`}
-            fill="none"
-            stroke={z.color}
-            strokeOpacity="0.2"
-            strokeWidth="13"
-            strokeLinecap="butt"
-          />
-        )
-      })}
-    </>
+    <path
+      d={`M ${x1.toFixed(2)},${y1.toFixed(2)} A ${R},${R} 0 0,1 ${x2.toFixed(2)},${y2.toFixed(2)}`}
+      fill="none"
+      stroke={color}
+      strokeWidth={12}
+      strokeLinecap="butt"
+    />
   )
 }
 
+/* ─── Zone / status helpers ─── */
+const { green: GREEN, yellow: YELLOW, red: RED } = GAUGE_COLORS
+
+function getZoneColor(val: number, t1: number, t2: number, invertColors: boolean): string {
+  if (invertColors) {
+    if (val <= t1) return GREEN
+    if (val <= t2) return YELLOW
+    return RED
+  } else {
+    if (val < t1) return RED
+    if (val < t2) return YELLOW
+    return GREEN
+  }
+}
+
+function getStatus(
+  val: number, t1: number, t2: number, invertColors: boolean,
+): { label: string; color: string } {
+  const color = getZoneColor(val, t1, t2, invertColors)
+  if (color === GREEN)  return { label: 'Excelente', color: GREEN }
+  if (color === YELLOW) return { label: 'Bueno',     color: YELLOW }
+  // Red zone — "Regular" if close to the yellow boundary, "Crítico" if far
+  const yellowSpan    = t2 - t1
+  const redBoundary   = invertColors ? t2 : t1
+  const distToYellow  = Math.abs(val - redBoundary)
+  return distToYellow <= yellowSpan * 0.6
+    ? { label: 'Regular', color: RED }
+    : { label: 'Crítico', color: RED }
+}
+
+/* ─── Component ─── */
 export default function GaugeKPI({
-  label,
-  value,
-  min = 0,
-  max = 100,
-  thresholds,
-  invertColors = false,
-  benchmarkLabel,
-  tooltip,
+  label, value, min, max, t1, t2, invertColors, benchmarkLabel, tooltip,
 }: GaugeKPIProps) {
   const [mounted, setMounted] = useState(false)
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    const id = setTimeout(() => setMounted(true), 40)
+    return () => clearTimeout(id)
+  }, [])
 
-  const clamped = Math.max(min, Math.min(max, isNaN(value) ? 0 : value))
-  const color   = getGaugeColor(clamped, thresholds, invertColors)
-  const noData  = value === 0
+  const total   = max - min
+  const clamped = Math.max(min, Math.min(max, isNaN(value) ? min : value))
 
-  // Animate from 0 on first render
-  const displayPct = mounted ? (clamped - min) / (max - min) : 0
+  // "No data" only when value is literally 0 and the gauge doesn't include 0 as a valid range value
+  const noData = value === 0 && min > 0
 
-  // Value arc endpoint — cap at 0.9999 to avoid degenerate path when start===end
-  // large-arc-flag is ALWAYS 0: any sub-arc of our 180° semicircle is ≤ 180°
-  const arcPct       = Math.min(0.9999, displayPct)
-  const [endX, endY] = arcPoint(arcPct)
+  /* Threshold fractions along the arc */
+  const pct1 = (t1 - min) / total
+  const pct2 = (t2 - min) / total
 
-  // Needle tip follows the arc end
-  const realPct         = (clamped - min) / (max - min)
-  const [needleX, needleY] = arcPoint(Math.min(0.9999, mounted ? realPct : 0))
+  /* Zone colors: zone1=min→t1, zone2=t1→t2, zone3=t2→max */
+  const [c1, c2, c3]: [string, string, string] = invertColors
+    ? [GREEN,  YELLOW, RED]
+    : [RED,    YELLOW, GREEN]
 
-  // Delta vs benchmark (parsed from label like ">70%" or "<28%")
-  const benchmarkNum = parseFloat(benchmarkLabel.replace(/[^0-9.]/g, ''))
-  const delta        = invertColors ? benchmarkNum - clamped : clamped - benchmarkNum
-  const deltaGood    = delta >= 0
+  /* Needle animation: starts at leftmost on first render */
+  const valPct          = (clamped - min) / total
+  const animPct         = mounted ? Math.min(0.9999, valPct) : 0.0001
+  const [nx, ny]        = arcPoint(animPct)
+
+  const zoneColor = getZoneColor(clamped, t1, t2, invertColors)
+  const status    = getStatus(clamped, t1, t2, invertColors)
+
+  /* Min / max label positions */
+  const [lx, ly] = arcPoint(0.0001)   // left (min)
+  const [rx, ry] = arcPoint(0.9999)   // right (max)
+
+  const minLabel = `${min}%`
+  const maxLabel = `${max}%`
 
   return (
-    <div className="gauge-card animate-fade-in" title={tooltip}>
-      {tooltip && <button className="gauge-help-btn" tabIndex={-1}>?</button>}
-
+    <div
+      style={{
+        width: 175,
+        flexShrink: 0,
+        background: '#FFFFFF',
+        borderRadius: 16,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '16px 8px 14px',
+        cursor: tooltip ? 'help' : 'default',
+      }}
+      title={tooltip}
+    >
+      {/* ── SVG semicircle ── */}
       <svg
-        viewBox="0 0 200 160"
+        viewBox="0 0 200 115"
         xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', maxWidth: 180, display: 'block', margin: '0 auto' }}
+        style={{ width: '100%', overflow: 'visible' }}
+        aria-hidden="true"
       >
         {/* 1. Gray base track */}
         <path
-          d={`M 28,95 A ${R},${R} 0 0,1 172,95`}
+          d={`M 25,100 A ${R},${R} 0 0,1 175,100`}
           fill="none"
           stroke="#E2E8F0"
-          strokeWidth="13"
+          strokeWidth={12}
           strokeLinecap="butt"
         />
 
-        {/* 2. Multicolor zone track */}
-        <TrackZones
-          thresholds={thresholds}
-          invertColors={invertColors}
-          min={min}
-          max={max}
-        />
+        {/* 2. Zone arcs (colour bands) */}
+        <ZoneArc pct0={0}    pct1={pct1} color={c1} />
+        <ZoneArc pct0={pct1} pct1={pct2} color={c2} />
+        <ZoneArc pct0={pct2} pct1={1}    color={c3} />
 
-        {/* 3. Value arc */}
-        {!noData && (
-          <path
-            d={`M 28,95 A ${R},${R} 0 0,1 ${endX.toFixed(2)},${endY.toFixed(2)}`}
-            fill="none"
-            stroke={color}
-            strokeWidth="13"
-            strokeLinecap="round"
-            style={{ transition: 'all 0.9s cubic-bezier(0.4,0,0.2,1)' }}
-          />
-        )}
-
-        {/* 4. Range labels */}
-        <text x="16" y="108" textAnchor="middle"
-          fontFamily="'DM Sans',sans-serif" fontSize="9" fontWeight="500" fill="#94A3B8">
-          {min}%
+        {/* 3. Min / max labels just below the arc ends */}
+        <text
+          x={lx - 3} y={ly + 14}
+          textAnchor="middle"
+          fontFamily="'DM Sans',sans-serif"
+          fontSize="8" fontWeight="500" fill="#B0BBCB"
+        >
+          {minLabel}
         </text>
-        <text x="184" y="108" textAnchor="middle"
-          fontFamily="'DM Sans',sans-serif" fontSize="9" fontWeight="500" fill="#94A3B8">
-          {max}%
+        <text
+          x={rx + 3} y={ry + 14}
+          textAnchor="middle"
+          fontFamily="'DM Sans',sans-serif"
+          fontSize="8" fontWeight="500" fill="#B0BBCB"
+        >
+          {maxLabel}
         </text>
 
-        {/* 5. Needle */}
+        {/* 4. Needle */}
         <line
           x1={CX} y1={CY}
-          x2={needleX.toFixed(2)} y2={needleY.toFixed(2)}
-          stroke="#1E293B" strokeWidth="2.5" strokeLinecap="round"
-          style={{ transition: 'x2 1s cubic-bezier(0.34,1.56,0.64,1), y2 1s cubic-bezier(0.34,1.56,0.64,1)' }}
+          x2={nx.toFixed(2)} y2={ny.toFixed(2)}
+          stroke="#1E293B"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          style={{
+            transition: mounted
+              ? 'x2 1s cubic-bezier(0.34,1.56,0.64,1), y2 1s cubic-bezier(0.34,1.56,0.64,1)'
+              : 'none',
+          }}
         />
+
+        {/* 5. Pivot dot */}
         <circle cx={CX} cy={CY} r="5.5" fill="#1E293B" />
-        <circle cx={CX} cy={CY} r="3"   fill="#64748B" />
-
-        {/* 6. Value */}
-        <text x={CX} y="115" textAnchor="middle"
-          fontFamily="'DM Sans',sans-serif"
-          fontSize={noData ? 11 : 22} fontWeight="700"
-          fill={noData ? '#94A3B8' : color}
-          style={{ fontVariantNumeric: 'tabular-nums' }}>
-          {noData ? 'Sin datos' : `${clamped.toFixed(1)}%`}
-        </text>
-
-        {/* 7. Label */}
-        <text x={CX} y="128" textAnchor="middle"
-          fontFamily="'DM Sans',sans-serif"
-          fontSize="8" fontWeight="600" fill="#64748B" letterSpacing="0.8">
-          {label.toUpperCase()}
-        </text>
-
-        {/* 8. Benchmark */}
-        <text x={CX} y="141" textAnchor="middle"
-          fontFamily="'DM Sans',sans-serif"
-          fontSize="8" fontWeight="400" fill="#94A3B8">
-          Ref: {benchmarkLabel}
-        </text>
+        <circle cx={CX} cy={CY} r="2.5" fill="#FFFFFF" />
       </svg>
 
-      {/* Delta badge */}
+      {/* ── Label ── */}
+      <p style={{
+        fontFamily: "'DM Sans',sans-serif",
+        fontSize: 10,
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: '#94A3B8',
+        marginTop: 4,
+        marginBottom: 4,
+        textAlign: 'center',
+        lineHeight: 1.2,
+      }}>
+        {label}
+      </p>
+
+      {/* ── Value ── */}
+      <p style={{
+        fontFamily: "'DM Sans',sans-serif",
+        fontSize: noData ? 14 : 22,
+        fontWeight: 700,
+        fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '-0.02em',
+        color: noData ? '#CBD5E1' : zoneColor,
+        lineHeight: 1,
+        marginBottom: 6,
+      }}>
+        {noData ? 'Sin datos' : `${clamped.toFixed(1)}%`}
+      </p>
+
+      {/* ── Status badge ── */}
       {!noData && (
-        <div className={`gauge-delta ${deltaGood ? 'positive' : 'negative'}`}>
-          {deltaGood ? '▲' : '▼'} {Math.abs(delta).toFixed(1)}pp {deltaGood ? 'sobre' : 'bajo'} objetivo
-        </div>
+        <span style={{
+          fontFamily: "'DM Sans',sans-serif",
+          fontSize: 10,
+          fontWeight: 700,
+          padding: '2px 10px',
+          borderRadius: 20,
+          background: `${status.color}1A`,
+          color: status.color,
+          marginBottom: 5,
+          whiteSpace: 'nowrap',
+        }}>
+          {status.label}
+        </span>
       )}
+
+      {/* ── Benchmark reference ── */}
+      <p style={{
+        fontFamily: "'DM Sans',sans-serif",
+        fontSize: 9.5,
+        fontWeight: 400,
+        color: '#94A3B8',
+        textAlign: 'center',
+        lineHeight: 1.3,
+        marginTop: noData ? 0 : 0,
+      }}>
+        Ref: {benchmarkLabel}
+      </p>
     </div>
   )
 }

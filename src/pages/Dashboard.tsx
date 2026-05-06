@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type React from 'react'
 import { Loader2 } from 'lucide-react'
 import {
   useDataStore,
@@ -91,8 +92,8 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ── Gauges 3×2 ── */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          {/* ── Gauges — horizontal scroll ── */}
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', marginBottom: 24, paddingBottom: 4 }}>
             {GAUGE_CONFIG.map((g) => (
               <GaugeKPI
                 key={g.key}
@@ -100,7 +101,8 @@ export default function Dashboard() {
                 value={gaugeValues[g.key]}
                 min={g.min}
                 max={g.max}
-                thresholds={g.thresholds}
+                t1={g.t1}
+                t2={g.t2}
                 invertColors={g.invertColors}
                 benchmarkLabel={g.benchmarkLabel}
                 tooltip={g.tooltip}
@@ -153,51 +155,184 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* ── Tabla comparativa UDNs ── */}
+          {/* ── Tarjetas UDN ── */}
           {udnSummaries.length > 0 && (
-            <div className="card overflow-hidden">
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--color-border)' }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                  Comparativo por Unidad de Negocio
-                </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="table-base">
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left'   }}>Unidad</th>
-                      <th style={{ textAlign: 'right'  }}>Ventas netas</th>
-                      <th style={{ textAlign: 'right'  }}>Costo venta</th>
-                      <th style={{ textAlign: 'right'  }}>Utilidad bruta</th>
-                      <th style={{ textAlign: 'center' }}>Food cost</th>
-                      <th style={{ textAlign: 'right'  }}>EBITDA</th>
-                      <th style={{ textAlign: 'right'  }}>EBITDA %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {udnSummaries.map((u) => (
-                      <tr key={u.udn}>
-                        <td style={{ textAlign: 'left', fontWeight: 600, color: 'var(--color-text-primary)' }}>{u.udn}</td>
-                        <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(u.ventasNetas)}</td>
-                        <td className="mono" style={{ textAlign: 'right' }}>{fmtMXN(u.costoVenta)}</td>
-                        <td className={`mono font-medium ${u.utilidadBruta >= 0 ? 'text-positive' : 'text-negative'}`} style={{ textAlign: 'right' }}>
-                          {fmtMXN(u.utilidadBruta)}
-                        </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className={`badge ${u.foodCostPct > 35 ? 'badge-negative' : 'badge-positive'}`}>
-                            {fmtPct(u.foodCostPct)}
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 16 }}>
+                Comparativo por Unidad de Negocio
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {udnSummaries.map((u) => {
+                  const positive    = u.ebitda >= 0
+                  const accent      = positive ? '#059669' : '#DC2626'
+                  const accentBg    = positive ? '#ECFDF5' : '#FEF2F2'
+                  const noVentas    = u.ventasNetas === 0
+                  const foodBad     = u.foodCostPct  > 35
+                  const labourBad   = u.manoDeObraPct > 32
+
+                  const LABEL: React.CSSProperties = {
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                    color: '#94A3B8',
+                    marginBottom: 3,
+                  }
+                  const VALUE_LG: React.CSSProperties = {
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
+                    letterSpacing: '-0.02em',
+                    color: '#0F172A',
+                    lineHeight: 1.15,
+                  }
+                  const VALUE_SM = (color: string): React.CSSProperties => ({
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
+                    color,
+                  })
+                  const PCT_SM: React.CSSProperties = {
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontVariantNumeric: 'tabular-nums',
+                  }
+                  const BAR_LABEL: React.CSSProperties = {
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                    color: '#94A3B8',
+                  }
+
+                  return (
+                    <div
+                      key={u.udn}
+                      style={{
+                        background: '#FFFFFF',
+                        borderRadius: 16,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)',
+                        borderLeft: `4px solid ${accent}`,
+                        padding: '20px 20px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        transition: 'box-shadow 0.2s ease',
+                      }}
+                    >
+                      {/* ── Header: nombre + badge EBITDA % ── */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', letterSpacing: '0.01em' }}>
+                          {u.udn}
+                        </span>
+                        {!noVentas && (
+                          <span style={{
+                            ...PCT_SM,
+                            padding: '3px 9px',
+                            borderRadius: 20,
+                            background: accentBg,
+                            color: accent,
+                            whiteSpace: 'nowrap',
+                            fontSize: 11,
+                          }}>
+                            EBITDA {fmtPct(u.ebitdaPct)}
                           </span>
-                        </td>
-                        <td className={`mono font-medium ${u.ebitda >= 0 ? 'text-positive' : 'text-negative'}`} style={{ textAlign: 'right' }}>
-                          {fmtMXN(u.ebitda)}
-                        </td>
-                        <td className={u.ebitdaPct >= 0 ? 'text-positive' : 'text-negative'} style={{ textAlign: 'right' }}>
-                          {fmtPct(u.ebitdaPct)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                      </div>
+
+                      {/* ── Hero: Ventas Netas ── */}
+                      <div style={{ marginBottom: 16 }}>
+                        <p style={LABEL}>Ventas Netas</p>
+                        {noVentas
+                          ? <p style={{ ...VALUE_LG, color: '#CBD5E1', fontSize: 15 }}>Sin ventas</p>
+                          : <p style={VALUE_LG}>{fmtMXN(u.ventasNetas)}</p>
+                        }
+                      </div>
+
+                      {/* ── Secundarias: Util. Bruta + EBITDA ── */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: 12,
+                        paddingBottom: 14,
+                        borderBottom: '1px solid #F1F5F9',
+                        marginBottom: 14,
+                      }}>
+                        <div>
+                          <p style={LABEL}>Util. Bruta</p>
+                          <p style={VALUE_SM(u.utilidadBruta >= 0 ? '#059669' : '#DC2626')}>
+                            {fmtMXN(u.utilidadBruta)}
+                          </p>
+                          {!noVentas && (
+                            <p style={{ ...PCT_SM, color: '#94A3B8', fontSize: 11, marginTop: 2 }}>
+                              {fmtPct(u.utilidadBrutaPct)}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p style={LABEL}>EBITDA</p>
+                          <p style={VALUE_SM(u.ebitda >= 0 ? '#059669' : '#DC2626')}>
+                            {fmtMXN(u.ebitda)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ── Costo Venta (solo si tiene valor real) ── */}
+                      {u.costoVenta > 0 && (
+                        <div style={{ marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={BAR_LABEL}>Costo Venta</span>
+                          <span style={{ ...PCT_SM, fontSize: 12, color: '#475569' }}>
+                            {fmtMXN(u.costoVenta)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* ── Barras de porcentaje: Food Cost + Labour ── */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {/* Food Cost */}
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                            <span style={BAR_LABEL}>Food Cost</span>
+                            <span style={{ ...PCT_SM, fontSize: 11, color: foodBad ? '#DC2626' : '#059669' }}>
+                              {fmtPct(u.foodCostPct)}
+                            </span>
+                          </div>
+                          <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${Math.min(u.foodCostPct, 100)}%`,
+                              background: foodBad ? '#DC2626' : '#059669',
+                              borderRadius: 2,
+                              transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+                            }} />
+                          </div>
+                        </div>
+                        {/* Labour */}
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                            <span style={BAR_LABEL}>Labour</span>
+                            <span style={{ ...PCT_SM, fontSize: 11, color: labourBad ? '#DC2626' : '#059669' }}>
+                              {fmtPct(u.manoDeObraPct)}
+                            </span>
+                          </div>
+                          <div style={{ height: 4, background: '#F1F5F9', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${Math.min(u.manoDeObraPct, 100)}%`,
+                              background: labourBad ? '#DC2626' : '#059669',
+                              borderRadius: 2,
+                              transition: 'width 0.8s cubic-bezier(0.4,0,0.2,1)',
+                            }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
